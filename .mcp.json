@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "herd": {
+      "type": "http",
+      "url": "https://mcp.herd.eco/v1"
+    }
+  }
+}
