@@ -1,0 +1,652 @@
+<title>HYPE Perp Prices</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one compact chart card sized for a Notion embed; header, legend row, plot, table toggle. */
+:root {
+  --bg: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --band: rgba(11, 11, 11, 0.055); --line: rgba(11, 11, 11, 0.10);
+  --s-bin: #2a78d6; --s-hl: #eb6834; --pos: #1baf7a; --neg: #e34948; --s-strat: #2a78d6;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --band: rgba(255, 255, 255, 0.06); --line: rgba(255, 255, 255, 0.10);
+    --s-bin: #3987e5; --s-hl: #d95926; --pos: #199e70; --neg: #e66767; --s-strat: #3987e5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --band: rgba(255, 255, 255, 0.06); --line: rgba(255, 255, 255, 0.10);
+  --s-bin: #3987e5; --s-hl: #d95926; --pos: #199e70; --neg: #e66767; --s-strat: #3987e5;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 18px 20px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 14px; }
+h1 { font-size: 17px; font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.005em; }
+.sub { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.45; max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.stat { display: grid; gap: 2px; min-width: 0; }
+.stat span { font-size: 11px; color: var(--muted); letter-spacing: 0.02em; }
+.stat b { font-size: 18px; font-weight: 600; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lk { width: 16px; height: 2px; border-radius: 1px; display: inline-block; }
+.lk.thick { height: 6px; border-radius: 3px; opacity: 0.4; }
+.sq { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; padding: 2px; gap: 2px; }
+.seg button { font: inherit; font-size: 12px; border: 0; background: transparent; color: var(--ink-2); padding: 4px 10px; border-radius: 5px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible, svg:focus-visible, summary:focus-visible { outline: 2px solid var(--s-bin); outline-offset: 2px; }
+.plot { position: relative; min-width: 0; }
+.plot svg { display: block; overflow: visible; touch-action: pan-y; }
+.tick { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.plabel { font-size: 12px; fill: var(--ink-2); font-weight: 500; }
+.note { font-size: 11px; fill: var(--ink-2); }
+.note.strong { fill: var(--ink); font-weight: 600; }
+.tip { position: absolute; pointer-events: none; background: var(--bg); border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+  display: grid; gap: 4px; min-width: 170px; z-index: 2; }
+.tip-date { font-size: 11px; color: var(--muted); }
+.tip-row { display: grid; grid-template-columns: 14px auto 1fr; align-items: center; gap: 6px; }
+.tip-row.sep { border-top: 1px solid var(--line); padding-top: 4px; margin-top: 2px; }
+.tip-row strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip-label { color: var(--ink-2); }
+.key { width: 12px; height: 2px; border-radius: 1px; }
+.key.blank { background: transparent; }
+.foot { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: 0; max-width: 90ch; }
+details { font-size: 12px; color: var(--ink-2); }
+summary { cursor: pointer; width: fit-content; }
+.tablewrap { overflow: auto; max-height: 320px; margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 4px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { position: sticky; top: 0; background: var(--bg); color: var(--ink); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap" id="root">
+<header>
+  <h1>HYPE perp price: Binance vs Hyperliquid</h1>
+  <p class="sub">Daily close of the HYPE perpetual on each venue. The gap between them is the trade's net mark-to-market risk. 5 Nov 2025 – 4 Nov 2026.</p>
+</header>
+<div class="stats">
+  <div class="stat"><span>Avg price gap</span><b>0.7 bps</b></div>
+  <div class="stat"><span>Days within ±10 bps</span><b>92%</b></div>
+  <div class="stat"><span>Widest gap</span><b>22.0 bps</b></div>
+  <div class="stat"><span>Worst daily M2M</span><b>−$823</b></div>
+</div>
+<div class="bar"><div class="legend">
+  <span><i class="lk thick" style="background:var(--s-bin)"></i>Binance perp</span>
+  <span><i class="lk" style="background:var(--s-hl)"></i>Hyperliquid perp</span>
+  <span><i class="sq" style="background:var(--s-bin)"></i>Binance above Hyperliquid</span>
+  <span><i class="sq" style="background:var(--s-hl)"></i>Hyperliquid above Binance</span>
+</div></div>
+<div class="plot"><div class="tip" hidden></div></div>
+<p class="foot">Gap = (Binance close − Hyperliquid close) ÷ mid price, in basis points (1 bp = 0.01%). Daily M2M = HYPE held per leg × change in the $ price gap. Both legs hold the same amount of HYPE, sized to $500k at the previous close, so if both prices move by the same $ amount it's zero. Example, 28 May: the gap went from +$0.13 to +$0.03 (−$0.09) × 8,668 HYPE = −$823. The next day the gap was back to 5.3 bps. Prices: daily perp candles from each venue.</p>
+<details><summary>Show data table</summary><div class="tablewrap"><table><thead><tr><th>Date</th><th>Binance</th><th>Hyperliquid</th><th>Gap (bps)</th><th>Daily M2M</th></tr></thead><tbody>
+<tr><td>2025-11-05</td><td>$41.36</td><td>$41.36</td><td>−0.5</td><td>$0</td></tr>
+<tr><td>2025-11-06</td><td>$38.50</td><td>$38.47</td><td>6.5</td><td>$326</td></tr>
+<tr><td>2025-11-07</td><td>$42.24</td><td>$42.20</td><td>9.9</td><td>$221</td></tr>
+<tr><td>2025-11-08</td><td>$40.15</td><td>$40.13</td><td>4.5</td><td>−$284</td></tr>
+<tr><td>2025-11-09</td><td>$41.81</td><td>$41.79</td><td>4.8</td><td>$25</td></tr>
+<tr><td>2025-11-10</td><td>$41.44</td><td>$41.41</td><td>7.0</td><td>$108</td></tr>
+<tr><td>2025-11-11</td><td>$38.68</td><td>$38.68</td><td>0.5</td><td>−$326</td></tr>
+<tr><td>2025-11-12</td><td>$38.36</td><td>$38.37</td><td>−3.9</td><td>−$220</td></tr>
+<tr><td>2025-11-13</td><td>$38.53</td><td>$38.57</td><td>−10.6</td><td>−$339</td></tr>
+<tr><td>2025-11-14</td><td>$37.49</td><td>$37.52</td><td>−8.0</td><td>$143</td></tr>
+<tr><td>2025-11-15</td><td>$38.57</td><td>$38.60</td><td>−9.1</td><td>−$67</td></tr>
+<tr><td>2025-11-16</td><td>$38.70</td><td>$38.71</td><td>−1.8</td><td>$363</td></tr>
+<tr><td>2025-11-17</td><td>$39.34</td><td>$39.32</td><td>3.3</td><td>$258</td></tr>
+<tr><td>2025-11-18</td><td>$38.65</td><td>$38.67</td><td>−5.7</td><td>−$445</td></tr>
+<tr><td>2025-11-19</td><td>$38.84</td><td>$38.87</td><td>−7.7</td><td>−$103</td></tr>
+<tr><td>2025-11-20</td><td>$37.54</td><td>$37.55</td><td>−2.4</td><td>$270</td></tr>
+<tr><td>2025-11-21</td><td>$33.85</td><td>$33.86</td><td>−3.8</td><td>−$53</td></tr>
+<tr><td>2025-11-22</td><td>$29.98</td><td>$29.98</td><td>−0.3</td><td>$177</td></tr>
+<tr><td>2025-11-23</td><td>$31.86</td><td>$31.88</td><td>−4.7</td><td>−$234</td></tr>
+<tr><td>2025-11-24</td><td>$33.73</td><td>$33.72</td><td>2.7</td><td>$377</td></tr>
+<tr><td>2025-11-25</td><td>$33.72</td><td>$33.75</td><td>−11.0</td><td>−$682</td></tr>
+<tr><td>2025-11-26</td><td>$36.22</td><td>$36.24</td><td>−4.4</td><td>$311</td></tr>
+<tr><td>2025-11-27</td><td>$34.72</td><td>$34.73</td><td>−1.4</td><td>$152</td></tr>
+<tr><td>2025-11-28</td><td>$34.92</td><td>$34.97</td><td>−13.2</td><td>−$590</td></tr>
+<tr><td>2025-11-29</td><td>$34.33</td><td>$34.36</td><td>−9.0</td><td>$215</td></tr>
+<tr><td>2025-11-30</td><td>$31.93</td><td>$31.95</td><td>−4.7</td><td>$233</td></tr>
+<tr><td>2025-12-01</td><td>$31.01</td><td>$31.01</td><td>0.0</td><td>$235</td></tr>
+<tr><td>2025-12-02</td><td>$33.85</td><td>$33.88</td><td>−8.0</td><td>−$435</td></tr>
+<tr><td>2025-12-03</td><td>$34.65</td><td>$34.67</td><td>−6.1</td><td>$89</td></tr>
+<tr><td>2025-12-04</td><td>$33.52</td><td>$33.54</td><td>−5.4</td><td>$43</td></tr>
+<tr><td>2025-12-05</td><td>$30.96</td><td>$30.99</td><td>−7.4</td><td>−$75</td></tr>
+<tr><td>2025-12-06</td><td>$30.95</td><td>$30.96</td><td>−4.8</td><td>$129</td></tr>
+<tr><td>2025-12-07</td><td>$29.72</td><td>$29.74</td><td>−7.4</td><td>−$113</td></tr>
+<tr><td>2025-12-08</td><td>$29.48</td><td>$29.49</td><td>−2.4</td><td>$252</td></tr>
+<tr><td>2025-12-09</td><td>$27.90</td><td>$27.91</td><td>−6.5</td><td>−$187</td></tr>
+<tr><td>2025-12-10</td><td>$28.82</td><td>$28.84</td><td>−9.0</td><td>−$143</td></tr>
+<tr><td>2025-12-11</td><td>$29.13</td><td>$29.16</td><td>−10.6</td><td>−$87</td></tr>
+<tr><td>2025-12-12</td><td>$28.59</td><td>$28.62</td><td>−9.8</td><td>$51</td></tr>
+<tr><td>2025-12-13</td><td>$29.58</td><td>$29.62</td><td>−15.5</td><td>−$315</td></tr>
+<tr><td>2025-12-14</td><td>$28.81</td><td>$28.85</td><td>−13.9</td><td>$101</td></tr>
+<tr><td>2025-12-15</td><td>$27.58</td><td>$27.62</td><td>−12.0</td><td>$121</td></tr>
+<tr><td>2025-12-16</td><td>$26.79</td><td>$26.81</td><td>−7.1</td><td>$254</td></tr>
+<tr><td>2025-12-17</td><td>$24.47</td><td>$24.48</td><td>−4.1</td><td>$168</td></tr>
+<tr><td>2025-12-18</td><td>$22.46</td><td>$22.45</td><td>1.8</td><td>$286</td></tr>
+<tr><td>2025-12-19</td><td>$24.86</td><td>$24.86</td><td>0.4</td><td>−$67</td></tr>
+<tr><td>2025-12-20</td><td>$23.99</td><td>$24.00</td><td>−1.7</td><td>−$101</td></tr>
+<tr><td>2025-12-21</td><td>$24.82</td><td>$24.84</td><td>−4.8</td><td>−$167</td></tr>
+<tr><td>2025-12-22</td><td>$24.87</td><td>$24.87</td><td>1.6</td><td>$322</td></tr>
+<tr><td>2025-12-23</td><td>$23.96</td><td>$23.95</td><td>3.8</td><td>$101</td></tr>
+<tr><td>2025-12-24</td><td>$25.16</td><td>$25.16</td><td>0.4</td><td>−$167</td></tr>
+<tr><td>2025-12-25</td><td>$24.38</td><td>$24.40</td><td>−6.6</td><td>−$338</td></tr>
+<tr><td>2025-12-26</td><td>$25.77</td><td>$25.79</td><td>−6.2</td><td>$0</td></tr>
+<tr><td>2025-12-27</td><td>$25.96</td><td>$25.97</td><td>−2.3</td><td>$194</td></tr>
+<tr><td>2025-12-28</td><td>$25.34</td><td>$25.36</td><td>−6.3</td><td>−$193</td></tr>
+<tr><td>2025-12-29</td><td>$25.79</td><td>$25.79</td><td>0.8</td><td>$355</td></tr>
+<tr><td>2025-12-30</td><td>$25.96</td><td>$25.97</td><td>−2.3</td><td>−$155</td></tr>
+<tr><td>2025-12-31</td><td>$25.45</td><td>$25.45</td><td>0.8</td><td>$154</td></tr>
+<tr><td>2026-01-01</td><td>$24.24</td><td>$24.23</td><td>5.0</td><td>$196</td></tr>
+<tr><td>2026-01-02</td><td>$24.60</td><td>$24.58</td><td>6.5</td><td>$83</td></tr>
+<tr><td>2026-01-03</td><td>$25.38</td><td>$25.38</td><td>−1.2</td><td>−$386</td></tr>
+<tr><td>2026-01-04</td><td>$26.86</td><td>$26.87</td><td>−3.3</td><td>−$118</td></tr>
+<tr><td>2026-01-05</td><td>$26.50</td><td>$26.51</td><td>−2.6</td><td>$37</td></tr>
+<tr><td>2026-01-06</td><td>$28.24</td><td>$28.24</td><td>−1.8</td><td>$38</td></tr>
+<tr><td>2026-01-07</td><td>$26.86</td><td>$26.88</td><td>−4.1</td><td>−$106</td></tr>
+<tr><td>2026-01-08</td><td>$25.67</td><td>$25.66</td><td>3.5</td><td>$372</td></tr>
+<tr><td>2026-01-09</td><td>$25.07</td><td>$25.05</td><td>6.8</td><td>$156</td></tr>
+<tr><td>2026-01-10</td><td>$24.04</td><td>$24.02</td><td>7.1</td><td>$0</td></tr>
+<tr><td>2026-01-11</td><td>$24.43</td><td>$24.42</td><td>4.9</td><td>−$104</td></tr>
+<tr><td>2026-01-12</td><td>$23.75</td><td>$23.76</td><td>−4.2</td><td>−$450</td></tr>
+<tr><td>2026-01-13</td><td>$25.75</td><td>$25.77</td><td>−7.0</td><td>−$168</td></tr>
+<tr><td>2026-01-14</td><td>$25.96</td><td>$25.96</td><td>1.5</td><td>$427</td></tr>
+<tr><td>2026-01-15</td><td>$24.72</td><td>$24.72</td><td>−0.8</td><td>−$116</td></tr>
+<tr><td>2026-01-16</td><td>$24.99</td><td>$25.00</td><td>−2.0</td><td>−$61</td></tr>
+<tr><td>2026-01-17</td><td>$25.42</td><td>$25.42</td><td>−0.8</td><td>$60</td></tr>
+<tr><td>2026-01-18</td><td>$24.46</td><td>$24.46</td><td>−2.0</td><td>−$59</td></tr>
+<tr><td>2026-01-19</td><td>$23.71</td><td>$23.73</td><td>−5.1</td><td>−$143</td></tr>
+<tr><td>2026-01-20</td><td>$20.98</td><td>$20.98</td><td>1.9</td><td>$337</td></tr>
+<tr><td>2026-01-21</td><td>$21.53</td><td>$21.53</td><td>0.9</td><td>−$48</td></tr>
+<tr><td>2026-01-22</td><td>$21.44</td><td>$21.44</td><td>0.5</td><td>−$23</td></tr>
+<tr><td>2026-01-23</td><td>$22.63</td><td>$22.64</td><td>−3.1</td><td>−$187</td></tr>
+<tr><td>2026-01-24</td><td>$23.20</td><td>$23.20</td><td>3.4</td><td>$331</td></tr>
+<tr><td>2026-01-25</td><td>$22.19</td><td>$22.20</td><td>−5.0</td><td>−$409</td></tr>
+<tr><td>2026-01-26</td><td>$24.93</td><td>$24.93</td><td>1.6</td><td>$338</td></tr>
+<tr><td>2026-01-27</td><td>$30.80</td><td>$30.81</td><td>−4.5</td><td>−$361</td></tr>
+<tr><td>2026-02-03</td><td>$32.70</td><td>$32.68</td><td>3.4</td><td>$406</td></tr>
+<tr><td>2026-02-04</td><td>$35.48</td><td>$35.45</td><td>8.5</td><td>$291</td></tr>
+<tr><td>2026-02-05</td><td>$33.09</td><td>$33.08</td><td>3.3</td><td>−$268</td></tr>
+<tr><td>2026-02-06</td><td>$32.38</td><td>$32.37</td><td>1.5</td><td>−$91</td></tr>
+<tr><td>2026-02-07</td><td>$31.40</td><td>$31.40</td><td>1.0</td><td>−$31</td></tr>
+<tr><td>2026-02-08</td><td>$32.44</td><td>$32.44</td><td>0.0</td><td>−$48</td></tr>
+<tr><td>2026-02-09</td><td>$31.33</td><td>$31.32</td><td>3.8</td><td>$185</td></tr>
+<tr><td>2026-02-10</td><td>$28.84</td><td>$28.82</td><td>6.2</td><td>$96</td></tr>
+<tr><td>2026-02-11</td><td>$29.38</td><td>$29.38</td><td>0.7</td><td>−$277</td></tr>
+<tr><td>2026-02-12</td><td>$31.09</td><td>$31.07</td><td>7.1</td><td>$340</td></tr>
+<tr><td>2026-02-13</td><td>$31.56</td><td>$31.56</td><td>1.6</td><td>−$273</td></tr>
+<tr><td>2026-02-14</td><td>$31.84</td><td>$31.84</td><td>−0.6</td><td>−$111</td></tr>
+<tr><td>2026-02-15</td><td>$30.70</td><td>$30.68</td><td>4.9</td><td>$267</td></tr>
+<tr><td>2026-02-16</td><td>$31.25</td><td>$31.22</td><td>7.4</td><td>$130</td></tr>
+<tr><td>2026-02-17</td><td>$29.50</td><td>$29.49</td><td>3.7</td><td>−$192</td></tr>
+<tr><td>2026-02-18</td><td>$28.67</td><td>$28.66</td><td>2.4</td><td>−$68</td></tr>
+<tr><td>2026-02-19</td><td>$29.00</td><td>$29.00</td><td>0.3</td><td>−$105</td></tr>
+<tr><td>2026-02-20</td><td>$30.36</td><td>$30.37</td><td>−0.7</td><td>−$52</td></tr>
+<tr><td>2026-02-21</td><td>$29.73</td><td>$29.73</td><td>0.0</td><td>$33</td></tr>
+<tr><td>2026-02-22</td><td>$29.02</td><td>$29.01</td><td>2.8</td><td>$135</td></tr>
+<tr><td>2026-02-23</td><td>$26.37</td><td>$26.37</td><td>0.8</td><td>−$103</td></tr>
+<tr><td>2026-02-24</td><td>$27.08</td><td>$27.07</td><td>3.3</td><td>$133</td></tr>
+<tr><td>2026-02-25</td><td>$27.88</td><td>$27.87</td><td>5.0</td><td>$92</td></tr>
+<tr><td>2026-02-26</td><td>$28.11</td><td>$28.11</td><td>1.1</td><td>−$197</td></tr>
+<tr><td>2026-02-27</td><td>$27.28</td><td>$27.28</td><td>−0.4</td><td>−$71</td></tr>
+<tr><td>2026-02-28</td><td>$31.20</td><td>$31.20</td><td>0.3</td><td>$37</td></tr>
+<tr><td>2026-03-01</td><td>$31.53</td><td>$31.53</td><td>−0.6</td><td>−$48</td></tr>
+<tr><td>2026-03-02</td><td>$32.81</td><td>$32.81</td><td>0.9</td><td>$79</td></tr>
+<tr><td>2026-03-03</td><td>$31.29</td><td>$31.29</td><td>−1.6</td><td>−$122</td></tr>
+<tr><td>2026-03-04</td><td>$32.15</td><td>$32.17</td><td>−6.5</td><td>−$256</td></tr>
+<tr><td>2026-03-05</td><td>$30.54</td><td>$30.53</td><td>0.7</td><td>$358</td></tr>
+<tr><td>2026-03-06</td><td>$31.02</td><td>$31.02</td><td>−0.6</td><td>−$66</td></tr>
+<tr><td>2026-03-07</td><td>$30.29</td><td>$30.31</td><td>−5.9</td><td>−$258</td></tr>
+<tr><td>2026-03-08</td><td>$30.68</td><td>$30.69</td><td>−0.3</td><td>$281</td></tr>
+<tr><td>2026-03-09</td><td>$34.66</td><td>$34.65</td><td>2.3</td><td>$147</td></tr>
+<tr><td>2026-03-10</td><td>$34.15</td><td>$34.17</td><td>−6.1</td><td>−$418</td></tr>
+<tr><td>2026-03-11</td><td>$36.21</td><td>$36.21</td><td>0.0</td><td>$307</td></tr>
+<tr><td>2026-03-12</td><td>$37.25</td><td>$37.26</td><td>−3.2</td><td>−$166</td></tr>
+<tr><td>2026-03-13</td><td>$36.43</td><td>$36.44</td><td>−3.3</td><td>$0</td></tr>
+<tr><td>2026-03-14</td><td>$37.79</td><td>$37.81</td><td>−3.7</td><td>−$27</td></tr>
+<tr><td>2026-03-15</td><td>$37.24</td><td>$37.26</td><td>−3.8</td><td>$0</td></tr>
+<tr><td>2026-03-16</td><td>$40.78</td><td>$40.82</td><td>−9.1</td><td>−$309</td></tr>
+<tr><td>2026-03-17</td><td>$41.15</td><td>$41.18</td><td>−9.0</td><td>$0</td></tr>
+<tr><td>2026-03-18</td><td>$42.08</td><td>$42.11</td><td>−6.7</td><td>$109</td></tr>
+<tr><td>2026-03-19</td><td>$39.33</td><td>$39.35</td><td>−4.8</td><td>$107</td></tr>
+<tr><td>2026-03-20</td><td>$39.53</td><td>$39.54</td><td>−2.5</td><td>$114</td></tr>
+<tr><td>2026-03-21</td><td>$39.13</td><td>$39.14</td><td>−2.3</td><td>$13</td></tr>
+<tr><td>2026-03-22</td><td>$38.34</td><td>$38.36</td><td>−4.2</td><td>−$89</td></tr>
+<tr><td>2026-03-23</td><td>$37.34</td><td>$37.37</td><td>−7.8</td><td>−$169</td></tr>
+<tr><td>2026-03-24</td><td>$40.32</td><td>$40.32</td><td>1.0</td><td>$442</td></tr>
+<tr><td>2026-03-25</td><td>$40.31</td><td>$40.32</td><td>−4.0</td><td>−$248</td></tr>
+<tr><td>2026-03-26</td><td>$39.15</td><td>$39.15</td><td>−0.5</td><td>$174</td></tr>
+<tr><td>2026-03-27</td><td>$38.66</td><td>$38.66</td><td>0.0</td><td>$26</td></tr>
+<tr><td>2026-03-28</td><td>$39.46</td><td>$39.45</td><td>3.0</td><td>$155</td></tr>
+<tr><td>2026-03-29</td><td>$37.84</td><td>$37.80</td><td>9.3</td><td>$291</td></tr>
+<tr><td>2026-03-30</td><td>$36.84</td><td>$36.82</td><td>4.1</td><td>−$264</td></tr>
+<tr><td>2026-03-31</td><td>$36.60</td><td>$36.59</td><td>1.1</td><td>−$149</td></tr>
+<tr><td>2026-04-01</td><td>$36.02</td><td>$36.01</td><td>5.0</td><td>$191</td></tr>
+<tr><td>2026-04-02</td><td>$35.19</td><td>$35.17</td><td>4.0</td><td>−$56</td></tr>
+<tr><td>2026-04-03</td><td>$35.60</td><td>$35.59</td><td>2.5</td><td>−$71</td></tr>
+<tr><td>2026-04-04</td><td>$36.36</td><td>$36.36</td><td>0.6</td><td>−$98</td></tr>
+<tr><td>2026-04-05</td><td>$36.84</td><td>$36.85</td><td>−1.6</td><td>−$110</td></tr>
+<tr><td>2026-04-06</td><td>$36.29</td><td>$36.29</td><td>0.6</td><td>$109</td></tr>
+<tr><td>2026-04-07</td><td>$38.60</td><td>$38.61</td><td>−1.3</td><td>−$96</td></tr>
+<tr><td>2026-04-08</td><td>$38.74</td><td>$38.76</td><td>−5.4</td><td>−$207</td></tr>
+<tr><td>2026-04-09</td><td>$39.45</td><td>$39.46</td><td>−1.5</td><td>$194</td></tr>
+<tr><td>2026-04-10</td><td>$41.58</td><td>$41.60</td><td>−5.0</td><td>−$190</td></tr>
+<tr><td>2026-04-11</td><td>$42.24</td><td>$42.28</td><td>−8.8</td><td>−$192</td></tr>
+<tr><td>2026-04-12</td><td>$40.82</td><td>$40.85</td><td>−6.4</td><td>$130</td></tr>
+<tr><td>2026-04-13</td><td>$44.28</td><td>$44.34</td><td>−14.2</td><td>−$453</td></tr>
+<tr><td>2026-04-14</td><td>$43.50</td><td>$43.53</td><td>−7.6</td><td>$339</td></tr>
+<tr><td>2026-04-15</td><td>$44.62</td><td>$44.64</td><td>−4.5</td><td>$149</td></tr>
+<tr><td>2026-04-16</td><td>$43.79</td><td>$43.81</td><td>−5.9</td><td>−$67</td></tr>
+<tr><td>2026-04-17</td><td>$44.61</td><td>$44.62</td><td>−3.1</td><td>$137</td></tr>
+<tr><td>2026-04-18</td><td>$43.77</td><td>$43.78</td><td>−2.5</td><td>$34</td></tr>
+<tr><td>2026-04-19</td><td>$40.70</td><td>$40.69</td><td>3.2</td><td>$274</td></tr>
+<tr><td>2026-04-20</td><td>$40.69</td><td>$40.70</td><td>−4.2</td><td>−$369</td></tr>
+<tr><td>2026-04-21</td><td>$39.75</td><td>$39.76</td><td>−2.5</td><td>$86</td></tr>
+<tr><td>2026-04-22</td><td>$41.13</td><td>$41.16</td><td>−6.8</td><td>−$226</td></tr>
+<tr><td>2026-04-23</td><td>$41.29</td><td>$41.30</td><td>−3.9</td><td>$146</td></tr>
+<tr><td>2026-04-24</td><td>$41.15</td><td>$41.18</td><td>−7.3</td><td>−$170</td></tr>
+<tr><td>2026-04-25</td><td>$41.47</td><td>$41.50</td><td>−7.2</td><td>$0</td></tr>
+<tr><td>2026-04-26</td><td>$42.43</td><td>$42.46</td><td>−7.5</td><td>−$24</td></tr>
+<tr><td>2026-04-27</td><td>$41.63</td><td>$41.65</td><td>−4.8</td><td>$141</td></tr>
+<tr><td>2026-04-28</td><td>$40.16</td><td>$40.16</td><td>0.5</td><td>$264</td></tr>
+<tr><td>2026-04-29</td><td>$39.93</td><td>$39.94</td><td>−0.5</td><td>−$50</td></tr>
+<tr><td>2026-04-30</td><td>$39.70</td><td>$39.69</td><td>2.0</td><td>$125</td></tr>
+<tr><td>2026-05-01</td><td>$41.15</td><td>$41.13</td><td>4.9</td><td>$151</td></tr>
+<tr><td>2026-05-02</td><td>$41.25</td><td>$41.25</td><td>0.0</td><td>−$243</td></tr>
+<tr><td>2026-05-03</td><td>$41.54</td><td>$41.55</td><td>−2.9</td><td>−$145</td></tr>
+<tr><td>2026-05-04</td><td>$41.80</td><td>$41.81</td><td>−1.7</td><td>$60</td></tr>
+<tr><td>2026-05-05</td><td>$43.69</td><td>$43.71</td><td>−3.9</td><td>−$120</td></tr>
+<tr><td>2026-05-06</td><td>$43.10</td><td>$43.12</td><td>−5.1</td><td>−$57</td></tr>
+<tr><td>2026-05-07</td><td>$42.52</td><td>$42.52</td><td>0.2</td><td>$267</td></tr>
+<tr><td>2026-05-08</td><td>$43.23</td><td>$43.27</td><td>−7.2</td><td>−$376</td></tr>
+<tr><td>2026-05-09</td><td>$42.91</td><td>$42.91</td><td>−0.2</td><td>$347</td></tr>
+<tr><td>2026-05-10</td><td>$43.00</td><td>$43.01</td><td>−3.0</td><td>−$140</td></tr>
+<tr><td>2026-05-11</td><td>$41.99</td><td>$42.00</td><td>−0.2</td><td>$140</td></tr>
+<tr><td>2026-05-12</td><td>$40.24</td><td>$40.26</td><td>−3.2</td><td>−$143</td></tr>
+<tr><td>2026-05-13</td><td>$38.82</td><td>$38.82</td><td>0.8</td><td>$199</td></tr>
+<tr><td>2026-05-14</td><td>$44.12</td><td>$44.13</td><td>−2.0</td><td>−$155</td></tr>
+<tr><td>2026-05-15</td><td>$44.17</td><td>$44.16</td><td>2.9</td><td>$249</td></tr>
+<tr><td>2026-05-16</td><td>$41.81</td><td>$41.82</td><td>−2.2</td><td>−$249</td></tr>
+<tr><td>2026-05-17</td><td>$45.70</td><td>$45.69</td><td>3.3</td><td>$287</td></tr>
+<tr><td>2026-05-18</td><td>$47.74</td><td>$47.76</td><td>−4.2</td><td>−$383</td></tr>
+<tr><td>2026-05-19</td><td>$48.04</td><td>$48.01</td><td>5.8</td><td>$503</td></tr>
+<tr><td>2026-05-20</td><td>$54.80</td><td>$54.84</td><td>−6.2</td><td>−$646</td></tr>
+<tr><td>2026-05-21</td><td>$58.60</td><td>$58.58</td><td>4.4</td><td>$547</td></tr>
+<tr><td>2026-05-22</td><td>$54.63</td><td>$54.58</td><td>9.2</td><td>$205</td></tr>
+<tr><td>2026-05-23</td><td>$58.73</td><td>$58.70</td><td>3.9</td><td>−$247</td></tr>
+<tr><td>2026-05-24</td><td>$62.79</td><td>$62.74</td><td>7.5</td><td>$204</td></tr>
+<tr><td>2026-05-25</td><td>$61.15</td><td>$61.10</td><td>8.0</td><td>$16</td></tr>
+<tr><td>2026-05-26</td><td>$59.58</td><td>$59.51</td><td>11.4</td><td>$155</td></tr>
+<tr><td>2026-05-27</td><td>$57.74</td><td>$57.62</td><td>22.0</td><td>$495</td></tr>
+<tr><td>2026-05-28</td><td>$61.55</td><td>$61.52</td><td>5.2</td><td>−$823</td></tr>
+<tr><td>2026-05-29</td><td>$64.44</td><td>$64.41</td><td>5.3</td><td>$16</td></tr>
+<tr><td>2026-05-30</td><td>$68.30</td><td>$68.29</td><td>1.8</td><td>−$171</td></tr>
+<tr><td>2026-05-31</td><td>$72.09</td><td>$72.05</td><td>5.5</td><td>$205</td></tr>
+<tr><td>2026-06-01</td><td>$73.67</td><td>$73.58</td><td>11.3</td><td>$298</td></tr>
+<tr><td>2026-06-02</td><td>$69.85</td><td>$69.83</td><td>2.6</td><td>−$441</td></tr>
+<tr><td>2026-06-03</td><td>$74.58</td><td>$74.57</td><td>0.3</td><td>−$115</td></tr>
+<tr><td>2026-06-04</td><td>$64.44</td><td>$64.43</td><td>1.7</td><td>$60</td></tr>
+<tr><td>2026-06-05</td><td>$59.78</td><td>$59.83</td><td>−8.2</td><td>−$466</td></tr>
+<tr><td>2026-06-06</td><td>$56.50</td><td>$56.52</td><td>−2.3</td><td>$301</td></tr>
+<tr><td>2026-06-07</td><td>$59.71</td><td>$59.75</td><td>−5.7</td><td>−$186</td></tr>
+<tr><td>2026-06-08</td><td>$63.82</td><td>$63.84</td><td>−3.4</td><td>$100</td></tr>
+<tr><td>2026-06-09</td><td>$57.79</td><td>$57.77</td><td>3.6</td><td>$337</td></tr>
+<tr><td>2026-06-10</td><td>$53.31</td><td>$53.28</td><td>4.3</td><td>$17</td></tr>
+<tr><td>2026-06-11</td><td>$58.96</td><td>$58.93</td><td>4.6</td><td>$38</td></tr>
+<tr><td>2026-06-12</td><td>$59.30</td><td>$59.26</td><td>5.7</td><td>$59</td></tr>
+<tr><td>2026-06-13</td><td>$60.68</td><td>$60.70</td><td>−2.6</td><td>−$422</td></tr>
+<tr><td>2026-06-14</td><td>$63.86</td><td>$63.92</td><td>−9.4</td><td>−$362</td></tr>
+<tr><td>2026-06-15</td><td>$66.87</td><td>$66.89</td><td>−2.5</td><td>$337</td></tr>
+<tr><td>2026-06-16</td><td>$73.65</td><td>$73.58</td><td>9.8</td><td>$665</td></tr>
+<tr><td>2026-06-17</td><td>$71.16</td><td>$71.14</td><td>2.2</td><td>−$380</td></tr>
+<tr><td>2026-06-18</td><td>$68.35</td><td>$68.35</td><td>−0.1</td><td>−$119</td></tr>
+<tr><td>2026-06-19</td><td>$70.29</td><td>$70.26</td><td>3.7</td><td>$198</td></tr>
+<tr><td>2026-06-20</td><td>$70.74</td><td>$70.74</td><td>−0.3</td><td>−$199</td></tr>
+<tr><td>2026-06-21</td><td>$66.94</td><td>$66.90</td><td>5.7</td><td>$283</td></tr>
+<tr><td>2026-06-22</td><td>$66.29</td><td>$66.25</td><td>5.9</td><td>$7</td></tr>
+<tr><td>2026-06-23</td><td>$62.20</td><td>$62.14</td><td>10.0</td><td>$174</td></tr>
+<tr><td>2026-06-24</td><td>$63.94</td><td>$63.89</td><td>8.6</td><td>−$56</td></tr>
+<tr><td>2026-06-25</td><td>$64.11</td><td>$64.07</td><td>6.9</td><td>−$86</td></tr>
+<tr><td>2026-06-26</td><td>$64.39</td><td>$64.33</td><td>9.0</td><td>$109</td></tr>
+<tr><td>2026-06-27</td><td>$61.68</td><td>$61.62</td><td>10.1</td><td>$31</td></tr>
+<tr><td>2026-06-28</td><td>$61.46</td><td>$61.40</td><td>9.9</td><td>−$8</td></tr>
+<tr><td>2026-06-29</td><td>$66.92</td><td>$66.90</td><td>3.3</td><td>−$317</td></tr>
+<tr><td>2026-06-30</td><td>$65.06</td><td>$65.01</td><td>7.2</td><td>$187</td></tr>
+<tr><td>2026-07-01</td><td>$62.37</td><td>$62.34</td><td>4.5</td><td>−$146</td></tr>
+<tr><td>2026-07-02</td><td>$66.93</td><td>$66.90</td><td>4.8</td><td>$32</td></tr>
+<tr><td>2026-07-03</td><td>$70.68</td><td>$70.63</td><td>6.1</td><td>$82</td></tr>
+<tr><td>2026-07-04</td><td>$69.87</td><td>$69.84</td><td>4.3</td><td>−$92</td></tr>
+<tr><td>2026-07-05</td><td>$71.36</td><td>$71.33</td><td>4.9</td><td>$36</td></tr>
+<tr><td>2026-07-06</td><td>$70.61</td><td>$70.58</td><td>3.4</td><td>−$77</td></tr>
+<tr><td>2026-07-07</td><td>$69.19</td><td>$69.15</td><td>5.3</td><td>$92</td></tr>
+<tr><td>2026-07-08</td><td>$67.60</td><td>$67.62</td><td>−2.5</td><td>−$390</td></tr>
+<tr><td>2026-07-09</td><td>$67.11</td><td>$67.08</td><td>4.0</td><td>$325</td></tr>
+<tr><td>2026-07-10</td><td>$67.52</td><td>$67.47</td><td>6.5</td><td>$127</td></tr>
+<tr><td>2026-07-11</td><td>$66.74</td><td>$66.70</td><td>6.3</td><td>−$15</td></tr>
+<tr><td>2026-07-12</td><td>$67.31</td><td>$67.29</td><td>2.7</td><td>−$180</td></tr>
+<tr><td>2026-07-13</td><td>$63.44</td><td>$63.40</td><td>6.9</td><td>$193</td></tr>
+<tr><td>2026-07-14</td><td>$65.57</td><td>$65.57</td><td>0.3</td><td>−$331</td></tr>
+<tr><td>2026-07-15</td><td>$66.88</td><td>$66.86</td><td>2.5</td><td>$114</td></tr>
+<tr><td>2026-07-16</td><td>$60.72</td><td>$60.70</td><td>2.8</td><td>$0</td></tr>
+<tr><td>2026-07-17</td><td>$59.76</td><td>$59.73</td><td>5.9</td><td>$148</td></tr>
+<tr><td>2026-07-18</td><td>$60.22</td><td>$60.19</td><td>4.3</td><td>−$75</td></tr>
+<tr><td>2026-07-19</td><td>$61.12</td><td>$61.11</td><td>1.6</td><td>−$133</td></tr>
+<tr><td>2026-07-20</td><td>$62.45</td><td>$62.45</td><td>0.2</td><td>−$74</td></tr>
+<tr><td>2026-07-21</td><td>$60.85</td><td>$60.84</td><td>2.6</td><td>$120</td></tr>
+<tr><td>2026-07-22</td><td>$59.36</td><td>$59.34</td><td>3.5</td><td>$41</td></tr>
+<tr><td>2026-07-23</td><td>$57.46</td><td>$57.43</td><td>5.2</td><td>$76</td></tr>
+<tr><td>2026-07-24</td><td>$57.42</td><td>$57.40</td><td>3.1</td><td>−$104</td></tr>
+<tr><td>2026-07-25</td><td>$58.10</td><td>$58.10</td><td>1.4</td><td>−$87</td></tr>
+<tr><td>2026-07-26</td><td>$59.62</td><td>$59.59</td><td>4.4</td><td>$155</td></tr>
+<tr><td>2026-07-27</td><td>$56.09</td><td>$56.06</td><td>5.0</td><td>$17</td></tr>
+<tr><td>2026-07-28</td><td>$55.18</td><td>$55.14</td><td>6.3</td><td>$62</td></tr>
+<tr><td>2026-07-29</td><td>$53.92</td><td>$53.86</td><td>10.4</td><td>$190</td></tr>
+<tr><td>2026-07-30</td><td>$55.84</td><td>$55.82</td><td>3.6</td><td>−$334</td></tr>
+<tr><td>2026-07-31</td><td>$52.56</td><td>$52.50</td><td>10.9</td><td>$331</td></tr>
+<tr><td>2026-08-01</td><td>$52.20</td><td>$52.15</td><td>9.8</td><td>−$57</td></tr>
+<tr><td>2026-08-02</td><td>$52.59</td><td>$52.53</td><td>11.6</td><td>$96</td></tr>
+<tr><td>2026-08-03</td><td>$54.00</td><td>$53.96</td><td>7.0</td><td>−$219</td></tr>
+<tr><td>2026-08-04</td><td>$55.06</td><td>$55.01</td><td>9.8</td><td>$148</td></tr>
+<tr><td>2026-08-05</td><td>$56.95</td><td>$56.91</td><td>6.9</td><td>−$136</td></tr>
+<tr><td>2026-08-06</td><td>$56.21</td><td>$56.16</td><td>8.9</td><td>$97</td></tr>
+<tr><td>2026-08-07</td><td>$54.09</td><td>$54.06</td><td>4.3</td><td>−$240</td></tr>
+<tr><td>2026-08-08</td><td>$55.11</td><td>$55.07</td><td>7.3</td><td>$157</td></tr>
+<tr><td>2026-08-09</td><td>$53.86</td><td>$53.83</td><td>5.0</td><td>−$118</td></tr>
+<tr><td>2026-08-10</td><td>$55.09</td><td>$55.05</td><td>7.4</td><td>$130</td></tr>
+<tr><td>2026-08-11</td><td>$54.49</td><td>$54.47</td><td>4.0</td><td>−$173</td></tr>
+<tr><td>2026-08-12</td><td>$56.06</td><td>$56.03</td><td>5.4</td><td>$73</td></tr>
+<tr><td>2026-08-13</td><td>$57.47</td><td>$57.46</td><td>1.7</td><td>−$178</td></tr>
+<tr><td>2026-08-14</td><td>$56.50</td><td>$56.48</td><td>3.0</td><td>$61</td></tr>
+<tr><td>2026-08-15</td><td>$56.90</td><td>$56.88</td><td>3.5</td><td>$27</td></tr>
+<tr><td>2026-08-16</td><td>$57.14</td><td>$57.10</td><td>6.5</td><td>$149</td></tr>
+<tr><td>2026-08-17</td><td>$59.42</td><td>$59.42</td><td>0.8</td><td>−$280</td></tr>
+<tr><td>2026-08-18</td><td>$58.51</td><td>$58.48</td><td>5.5</td><td>$227</td></tr>
+<tr><td>2026-08-19</td><td>$69.79</td><td>$69.75</td><td>5.6</td><td>$60</td></tr>
+<tr><td>2026-08-20</td><td>$73.77</td><td>$73.77</td><td>−0.5</td><td>−$308</td></tr>
+<tr><td>2026-08-21</td><td>$75.58</td><td>$75.56</td><td>4.0</td><td>$230</td></tr>
+<tr><td>2026-08-22</td><td>$79.33</td><td>$79.41</td><td>−9.2</td><td>−$681</td></tr>
+<tr><td>2026-08-23</td><td>$82.32</td><td>$82.37</td><td>−5.7</td><td>$164</td></tr>
+<tr><td>2026-08-24</td><td>$78.96</td><td>$79.01</td><td>−7.0</td><td>−$49</td></tr>
+<tr><td>2026-08-25</td><td>$79.63</td><td>$79.65</td><td>−2.3</td><td>$234</td></tr>
+<tr><td>2026-08-26</td><td>$82.27</td><td>$82.28</td><td>−1.9</td><td>$13</td></tr>
+<tr><td>2026-08-27</td><td>$84.62</td><td>$84.64</td><td>−3.0</td><td>−$55</td></tr>
+<tr><td>2026-08-28</td><td>$80.90</td><td>$80.94</td><td>−4.7</td><td>−$77</td></tr>
+<tr><td>2026-08-29</td><td>$83.37</td><td>$83.38</td><td>−1.7</td><td>$148</td></tr>
+<tr><td>2026-08-30</td><td>$79.98</td><td>$79.99</td><td>−1.4</td><td>$18</td></tr>
+<tr><td>2026-08-31</td><td>$84.17</td><td>$84.17</td><td>−0.2</td><td>$56</td></tr>
+<tr><td>2026-09-01</td><td>$82.79</td><td>$82.74</td><td>6.2</td><td>$315</td></tr>
+<tr><td>2026-09-02</td><td>$81.88</td><td>$81.90</td><td>−2.3</td><td>−$423</td></tr>
+<tr><td>2026-09-03</td><td>$87.46</td><td>$87.49</td><td>−3.1</td><td>−$49</td></tr>
+<tr><td>2026-09-04</td><td>$84.40</td><td>$84.45</td><td>−6.3</td><td>−$149</td></tr>
+<tr><td>2026-09-05</td><td>$85.38</td><td>$85.43</td><td>−5.4</td><td>$41</td></tr>
+<tr><td>2026-09-06</td><td>$87.98</td><td>$87.94</td><td>4.8</td><td>$515</td></tr>
+<tr><td>2026-09-07</td><td>$85.18</td><td>$85.18</td><td>0.0</td><td>−$239</td></tr>
+<tr><td>2026-09-08</td><td>$85.12</td><td>$85.12</td><td>0.0</td><td>$0</td></tr>
+<tr><td>2026-09-09</td><td>$83.53</td><td>$83.52</td><td>1.1</td><td>$53</td></tr>
+<tr><td>2026-09-10</td><td>$78.57</td><td>$78.52</td><td>6.6</td><td>$257</td></tr>
+<tr><td>2026-09-11</td><td>$79.43</td><td>$79.39</td><td>4.8</td><td>−$89</td></tr>
+<tr><td>2026-09-12</td><td>$79.64</td><td>$79.64</td><td>−0.3</td><td>−$252</td></tr>
+<tr><td>2026-09-13</td><td>$77.28</td><td>$77.26</td><td>3.1</td><td>$163</td></tr>
+<tr><td>2026-09-14</td><td>$80.32</td><td>$80.33</td><td>−2.4</td><td>−$278</td></tr>
+<tr><td>2026-09-15</td><td>$76.95</td><td>$76.91</td><td>5.8</td><td>$398</td></tr>
+<tr><td>2026-09-16</td><td>$78.27</td><td>$78.23</td><td>4.3</td><td>−$71</td></tr>
+<tr><td>2026-09-17</td><td>$85.13</td><td>$85.12</td><td>0.8</td><td>−$173</td></tr>
+<tr><td>2026-09-18</td><td>$92.60</td><td>$92.61</td><td>−1.2</td><td>−$106</td></tr>
+<tr><td>2026-09-19</td><td>$92.21</td><td>$92.22</td><td>−1.1</td><td>$5</td></tr>
+<tr><td>2026-09-20</td><td>$93.66</td><td>$93.75</td><td>−9.8</td><td>−$445</td></tr>
+<tr><td>2026-09-21</td><td>$94.04</td><td>$94.14</td><td>−10.5</td><td>−$37</td></tr>
+<tr><td>2026-09-22</td><td>$97.21</td><td>$97.27</td><td>−6.6</td><td>$186</td></tr>
+<tr><td>2026-09-23</td><td>$94.02</td><td>$94.09</td><td>−7.2</td><td>−$21</td></tr>
+<tr><td>2026-09-24</td><td>$92.06</td><td>$92.08</td><td>−2.2</td><td>$255</td></tr>
+<tr><td>2026-09-25</td><td>$92.37</td><td>$92.35</td><td>1.6</td><td>$190</td></tr>
+<tr><td>2026-09-26</td><td>$92.52</td><td>$92.59</td><td>−7.6</td><td>−$460</td></tr>
+<tr><td>2026-09-27</td><td>$91.68</td><td>$91.72</td><td>−4.4</td><td>$162</td></tr>
+<tr><td>2026-09-28</td><td>$87.47</td><td>$87.47</td><td>−0.2</td><td>$207</td></tr>
+<tr><td>2026-09-29</td><td>$86.02</td><td>$86.03</td><td>−0.3</td><td>−$6</td></tr>
+<tr><td>2026-09-30</td><td>$90.97</td><td>$90.94</td><td>2.2</td><td>$134</td></tr>
+<tr><td>2026-10-01</td><td>$87.62</td><td>$87.63</td><td>−1.0</td><td>−$159</td></tr>
+<tr><td>2026-10-02</td><td>$89.09</td><td>$89.06</td><td>4.2</td><td>$262</td></tr>
+<tr><td>2026-10-03</td><td>$89.31</td><td>$89.28</td><td>3.8</td><td>−$17</td></tr>
+<tr><td>2026-10-04</td><td>$90.56</td><td>$90.57</td><td>−2.0</td><td>−$291</td></tr>
+<tr><td>2026-10-05</td><td>$94.15</td><td>$94.23</td><td>−8.5</td><td>−$342</td></tr>
+<tr><td>2026-10-06</td><td>$91.93</td><td>$91.92</td><td>0.3</td><td>$441</td></tr>
+<tr><td>2026-10-07</td><td>$88.49</td><td>$88.46</td><td>2.7</td><td>$114</td></tr>
+<tr><td>2026-10-08</td><td>$84.19</td><td>$84.15</td><td>4.8</td><td>$90</td></tr>
+<tr><td>2026-10-09</td><td>$84.17</td><td>$84.14</td><td>3.2</td><td>−$77</td></tr>
+<tr><td>2026-10-10</td><td>$85.45</td><td>$85.42</td><td>4.1</td><td>$48</td></tr>
+<tr><td>2026-10-11</td><td>$86.68</td><td>$86.65</td><td>3.2</td><td>−$41</td></tr>
+<tr><td>2026-10-12</td><td>$80.99</td><td>$80.89</td><td>11.7</td><td>$387</td></tr>
+<tr><td>2026-10-13</td><td>$81.56</td><td>$81.52</td><td>4.7</td><td>−$352</td></tr>
+<tr><td>2026-10-14</td><td>$80.87</td><td>$80.79</td><td>10.5</td><td>$288</td></tr>
+<tr><td>2026-10-15</td><td>$81.77</td><td>$81.68</td><td>10.2</td><td>−$12</td></tr>
+<tr><td>2026-10-16</td><td>$80.34</td><td>$80.26</td><td>10.1</td><td>−$12</td></tr>
+<tr><td>2026-10-17</td><td>$78.04</td><td>$77.94</td><td>13.0</td><td>$125</td></tr>
+<tr><td>2026-10-18</td><td>$78.93</td><td>$78.81</td><td>14.3</td><td>$77</td></tr>
+<tr><td>2026-10-19</td><td>$79.26</td><td>$79.17</td><td>11.7</td><td>−$127</td></tr>
+<tr><td>2026-10-20</td><td>$80.39</td><td>$80.35</td><td>5.1</td><td>−$328</td></tr>
+<tr><td>2026-10-21</td><td>$80.64</td><td>$80.58</td><td>7.4</td><td>$118</td></tr>
+<tr><td>2026-10-22</td><td>$77.44</td><td>$77.33</td><td>14.3</td><td>$316</td></tr>
+<tr><td>2026-10-23</td><td>$77.11</td><td>$77.01</td><td>12.6</td><td>−$90</td></tr>
+<tr><td>2026-10-24</td><td>$76.65</td><td>$76.59</td><td>7.8</td><td>−$240</td></tr>
+<tr><td>2026-10-25</td><td>$76.31</td><td>$76.22</td><td>10.9</td><td>$150</td></tr>
+<tr><td>2026-10-26</td><td>$78.33</td><td>$78.23</td><td>12.9</td><td>$118</td></tr>
+<tr><td>2026-10-27</td><td>$81.27</td><td>$81.20</td><td>8.0</td><td>−$230</td></tr>
+<tr><td>2026-10-28</td><td>$80.65</td><td>$80.56</td><td>10.9</td><td>$142</td></tr>
+<tr><td>2026-10-29</td><td>$89.04</td><td>$88.96</td><td>9.2</td><td>−$37</td></tr>
+<tr><td>2026-10-30</td><td>$90.00</td><td>$89.96</td><td>4.0</td><td>−$258</td></tr>
+<tr><td>2026-10-31</td><td>$88.06</td><td>$87.93</td><td>14.0</td><td>$483</td></tr>
+<tr><td>2026-11-01</td><td>$87.87</td><td>$87.84</td><td>3.6</td><td>−$517</td></tr>
+<tr><td>2026-11-02</td><td>$84.11</td><td>$84.01</td><td>12.0</td><td>$393</td></tr>
+<tr><td>2026-11-03</td><td>$85.12</td><td>$85.08</td><td>4.7</td><td>−$363</td></tr>
+<tr><td>2026-11-04</td><td>$83.80</td><td>$83.78</td><td>2.6</td><td>−$106</td></tr>
+</tbody></table></div></details>
+</div>
+<script>
+// Shared multi-panel time-series chart: synced crosshair, one tooltip, keyboard support.
+function makeChart(root, opts) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const host = root.querySelector('.plot');
+  const tip = root.querySelector('.tip');
+  const n = opts.dates.length;
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let svg, geo, cur = null, raf = 0;
+
+  function el(tag, attrs, parent, style) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (style) Object.assign(e.style, style);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, cls, anchor) {
+    const t = el('text', { x, y, class: cls, 'text-anchor': anchor || 'start' }, parent);
+    t.textContent = s;
+    return t;
+  }
+  function nice(lo, hi, count) {
+    const raw = (hi - lo) / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    const step = (r >= 7.5 ? 10 : r >= 3.5 ? 5 : r >= 1.5 ? 2 : 1) * mag;
+    const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step;
+    const ticks = [];
+    for (let v = a; v <= b + step / 2; v += step) ticks.push(+v.toFixed(10));
+    return { lo: a, hi: b, ticks };
+  }
+  function fmtDate(d) { return d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+
+  function draw() {
+    host.querySelectorAll('svg').forEach(s => s.remove());
+    const W = Math.max(300, host.clientWidth);
+    const narrow = W < 520;
+    const padL = 46, padR = opts.padR || 14, strip = opts.strip ? 30 : 0, labH = 18, gapP = 14, axisH = 24;
+    let H = strip + axisH + 4;
+    opts.panels.forEach((p, i) => { H += labH + p.h + (i ? gapP : 0); });
+    svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.aria, tabindex: 0 }, host);
+    const plotW = W - padL - padR, step = plotW / (n - 1);
+    const X = i => padL + i * step;
+    const panels = [];
+    let y = strip;
+    opts.panels.forEach((p, pi) => {
+      if (pi) y += gapP;
+      const ly = y + 12; y += labH;
+      const vals = [];
+      p.series.forEach(s => s.values().forEach(v => { if (v != null && isFinite(v)) vals.push(v); }));
+      let lo = Math.min(...vals), hi = Math.max(...vals);
+      if (p.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+      const pad = (hi - lo) * 0.05; hi += pad; if (!p.zero || lo < 0) lo -= pad;
+      const t = nice(lo, hi, narrow ? 3 : (p.ticks || 4));
+      const y0 = y, Y = v => y0 + p.h - (v - t.lo) / (t.hi - t.lo) * p.h;
+      panels.push({ p, Y, t, ly });
+      y += p.h;
+    });
+    const top = strip, bottom = y;
+    geo = { X, panels, top, bottom, W, padL, padR, step };
+
+    // shaded periods span every panel; their labels sit in the strip on top
+    (opts.bands || []).forEach(b => {
+      const x1 = X(b.i0) - step / 2, x2 = X(b.i1) + step / 2;
+      if (b.i0 === b.i1) el('line', { x1: X(b.i0), x2: X(b.i0), y1: top, y2: bottom }, svg, { stroke: 'var(--ink-2)', strokeWidth: 1.5, opacity: 0.55 });
+      else el('rect', { x: x1, y: top, width: Math.max(2, x2 - x1), height: bottom - top }, svg, { fill: 'var(--band)' });
+      if (b.label) {
+        const mid = (x1 + x2) / 2, ty = 11 + (b.row || 0) * 14;
+        let anchor = 'middle', tx = mid;
+        if (mid > W - padR - 70) { anchor = 'end'; tx = Math.min(x2, W - padR); }
+        else if (mid < padL + 40) { anchor = 'start'; tx = Math.max(x1, 2); }
+        txt(svg, tx, ty, narrow && b.short ? b.short : b.label, 'note', anchor);
+      }
+    });
+
+    // grid, ticks and marks per panel
+    panels.forEach(pp => {
+      const { p, Y, t, ly } = pp;
+      txt(svg, padL, ly, p.label, 'plabel');
+      t.ticks.forEach(v => {
+        const yy = Y(v);
+        el('line', { x1: padL, x2: W - padR, y1: yy, y2: yy }, svg, { stroke: v === 0 && p.zero ? 'var(--axis)' : 'var(--grid)', strokeWidth: 1 });
+        txt(svg, padL - 6, yy + 4, p.tick(v).replace('-', '\u2212'), 'tick', 'end');
+      });
+      p.series.forEach(s => {
+        const arr = s.values();
+        if (s.type === 'bar') {
+          const bw = Math.max(1, step * 0.7);
+          arr.forEach((v, i) => {
+            if (v == null || v === 0) return;
+            const a = Y(Math.max(v, 0)), b = Y(Math.min(v, 0));
+            el('rect', { x: X(i) - bw / 2, y: a, width: bw, height: Math.max(0.75, b - a) }, svg, { fill: s.color(v) });
+          });
+        } else {
+          let d = '';
+          arr.forEach((v, i) => { if (v != null) d += (d ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); });
+          el('path', { d }, svg, { fill: 'none', stroke: s.color, strokeWidth: s.width || 2, strokeOpacity: s.opacity || 1, strokeLinejoin: 'round', strokeLinecap: 'round' });
+        }
+      });
+      (p.marks || []).forEach(m => {
+        const v = m.value(), cx = X(m.i), cy = Y(v);
+        el('circle', { cx, cy, r: 4 }, svg, { fill: 'var(--ink)', stroke: 'var(--bg)', strokeWidth: 2 });
+        const right = cx < W * 0.6;
+        txt(svg, cx + (right ? 9 : -9), cy + (m.dy || 4), narrow && m.short ? m.short : m.label, 'note strong', right ? 'start' : 'end');
+      });
+    });
+
+    // x axis: first day of each month
+    const ay = bottom + 16;
+    let lastX = -1e9;
+    opts.dates.forEach((d, i) => {
+      // first row of each month, so a gap over the 1st doesn't drop the label
+      if (i === 0 || d.getUTCMonth() === opts.dates[i - 1].getUTCMonth()) return;
+      const x = X(i);
+      el('line', { x1: x, x2: x, y1: bottom, y2: bottom + 4 }, svg, { stroke: 'var(--axis)', strokeWidth: 1 });
+      if (x - lastX < (narrow ? 34 : 28)) return;
+      txt(svg, x, ay, MON[d.getUTCMonth()], 'tick', 'middle'); lastX = x;
+    });
+
+    // crosshair layer
+    const g = el('g', { 'pointer-events': 'none' }, svg);
+    const vline = el('line', { y1: top, y2: bottom }, g, { stroke: 'var(--ink-2)', strokeWidth: 1, opacity: 0 });
+    const dots = [];
+    panels.forEach(({ p, Y }) => p.series.forEach(s => {
+      if (s.type === 'bar') return;
+      dots.push({ s, Y, c: el('circle', { r: 4 }, g, { fill: s.color, stroke: 'var(--bg)', strokeWidth: 2, opacity: 0 }) });
+    }));
+    geo.vline = vline; geo.dots = dots;
+    const hit = el('rect', { x: padL - step / 2, y: top, width: plotW + step, height: bottom - top }, svg, { fill: 'transparent' });
+    hit.addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(); show(Math.round((e.clientX - r.left - padL) / step)); });
+    hit.addEventListener('pointerleave', hide);
+    svg.addEventListener('focus', () => show(cur == null ? n - 1 : cur));
+    svg.addEventListener('blur', hide);
+    svg.addEventListener('keydown', e => {
+      const k = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+      if (k) { e.preventDefault(); show((cur == null ? n - 1 : cur) + k * (e.shiftKey ? 7 : 1)); }
+      if (e.key === 'Escape') hide();
+    });
+    if (cur != null && root.dataset.active === '1') show(cur);
+  }
+
+  function show(i) {
+    i = Math.max(0, Math.min(n - 1, i)); cur = i; root.dataset.active = '1';
+    const x = geo.X(i);
+    geo.vline.setAttribute('x1', x); geo.vline.setAttribute('x2', x); geo.vline.style.opacity = 0.5;
+    geo.dots.forEach(({ s, Y, c }) => {
+      const v = s.values()[i];
+      if (v == null) { c.style.opacity = 0; return; }
+      c.setAttribute('cx', x); c.setAttribute('cy', Y(v)); c.style.opacity = 1;
+    });
+    tip.replaceChildren();
+    const h = document.createElement('div'); h.className = 'tip-date'; h.textContent = fmtDate(opts.dates[i]); tip.appendChild(h);
+    opts.tooltip(i).forEach(r => {
+      const row = document.createElement('div'); row.className = 'tip-row' + (r.sep ? ' sep' : '');
+      const key = document.createElement('span'); key.className = 'key' + (r.key ? '' : ' blank');
+      if (r.key) key.style.background = r.key;
+      const v = document.createElement('strong'); v.textContent = r.value;
+      const l = document.createElement('span'); l.className = 'tip-label'; l.textContent = r.label;
+      row.append(key, v, l); tip.appendChild(row);
+    });
+    tip.hidden = false;
+    const tw = tip.offsetWidth, hw = host.clientWidth;
+    let left = x + 14; if (left + tw > hw - 4) left = x - 14 - tw; if (left < 4) left = 4;
+    tip.style.left = left + 'px'; tip.style.top = (geo.top + 6) + 'px';
+  }
+  function hide() {
+    root.dataset.active = '0'; tip.hidden = true;
+    if (!geo) return;
+    geo.vline.style.opacity = 0; geo.dots.forEach(d => d.c.style.opacity = 0);
+  }
+
+  new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }).observe(host);
+  draw();
+  return { redraw: draw };
+}
+
+const DATA = {"d":["2025-11-05","2025-11-06","2025-11-07","2025-11-08","2025-11-09","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-15","2025-11-16","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-22","2025-11-23","2025-11-24","2025-11-25","2025-11-26","2025-11-27","2025-11-28","2025-11-29","2025-11-30","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-06","2025-12-07","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-13","2025-12-14","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-20","2025-12-21","2025-12-22","2025-12-23","2025-12-24","2025-12-25","2025-12-26","2025-12-27","2025-12-28","2025-12-29","2025-12-30","2025-12-31","2026-01-01","2026-01-02","2026-01-03","2026-01-04","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-10","2026-01-11","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-17","2026-01-18","2026-01-19","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-24","2026-01-25","2026-01-26","2026-01-27","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-07","2026-02-08","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-14","2026-02-15","2026-02-16","2026-02-17","2026-02-18","2026-02-19","2026-02-20","2026-02-21","2026-02-22","2026-02-23","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-02-28","2026-03-01","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-07","2026-03-08","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-14","2026-03-15","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-21","2026-03-22","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-28","2026-03-29","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-03","2026-04-04","2026-04-05","2026-04-06","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-11","2026-04-12","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-18","2026-04-19","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-25","2026-04-26","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-01","2026-05-02","2026-05-03","2026-05-04","2026-05-05","2026-05-06","2026-05-07","2026-05-08","2026-05-09","2026-05-10","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-16","2026-05-17","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-23","2026-05-24","2026-05-25","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-05-30","2026-05-31","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-06","2026-06-07","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-13","2026-06-14","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-19","2026-06-20","2026-06-21","2026-06-22","2026-06-23","2026-06-24","2026-06-25","2026-06-26","2026-06-27","2026-06-28","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-03","2026-07-04","2026-07-05","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-11","2026-07-12","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-18","2026-07-19","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-25","2026-07-26","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-01","2026-08-02","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07","2026-08-08","2026-08-09","2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-22","2026-08-23","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-29","2026-08-30","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-05","2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12","2026-09-13","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-19","2026-09-20","2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-26","2026-09-27","2026-09-28","2026-09-29","2026-09-30","2026-10-01","2026-10-02","2026-10-03","2026-10-04","2026-10-05","2026-10-06","2026-10-07","2026-10-08","2026-10-09","2026-10-10","2026-10-11","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-17","2026-10-18","2026-10-19","2026-10-20","2026-10-21","2026-10-22","2026-10-23","2026-10-24","2026-10-25","2026-10-26","2026-10-27","2026-10-28","2026-10-29","2026-10-30","2026-10-31","2026-11-01","2026-11-02","2026-11-03","2026-11-04"],"b":[41.36,38.5,42.24,40.15,41.81,41.44,38.68,38.36,38.53,37.49,38.57,38.7,39.34,38.65,38.84,37.54,33.85,29.98,31.86,33.73,33.72,36.22,34.72,34.92,34.33,31.93,31.01,33.85,34.65,33.52,30.96,30.95,29.72,29.48,27.9,28.82,29.13,28.59,29.58,28.81,27.58,26.79,24.47,22.46,24.86,23.99,24.82,24.87,23.96,25.16,24.38,25.77,25.96,25.34,25.79,25.96,25.45,24.24,24.6,25.38,26.86,26.5,28.24,26.86,25.67,25.07,24.04,24.43,23.75,25.75,25.96,24.72,24.99,25.42,24.46,23.71,20.98,21.53,21.44,22.63,23.2,22.19,24.93,30.8,32.7,35.48,33.09,32.38,31.4,32.44,31.33,28.84,29.38,31.09,31.56,31.84,30.7,31.25,29.5,28.67,29.0,30.36,29.73,29.02,26.37,27.08,27.88,28.11,27.28,31.2,31.53,32.81,31.29,32.15,30.54,31.02,30.29,30.68,34.66,34.15,36.21,37.25,36.43,37.79,37.24,40.78,41.15,42.08,39.33,39.53,39.13,38.34,37.34,40.32,40.31,39.15,38.66,39.46,37.84,36.84,36.6,36.02,35.19,35.6,36.36,36.84,36.29,38.6,38.74,39.45,41.58,42.24,40.82,44.28,43.5,44.62,43.79,44.61,43.77,40.7,40.69,39.75,41.13,41.29,41.15,41.47,42.43,41.63,40.16,39.93,39.7,41.15,41.25,41.54,41.8,43.69,43.1,42.52,43.23,42.91,43.0,41.99,40.24,38.82,44.12,44.17,41.81,45.7,47.74,48.04,54.8,58.6,54.63,58.73,62.79,61.15,59.58,57.74,61.55,64.44,68.3,72.09,73.67,69.85,74.58,64.44,59.78,56.5,59.71,63.82,57.79,53.31,58.96,59.3,60.68,63.86,66.87,73.65,71.16,68.35,70.29,70.74,66.94,66.29,62.2,63.94,64.11,64.39,61.68,61.46,66.92,65.06,62.37,66.93,70.68,69.87,71.36,70.61,69.19,67.6,67.11,67.52,66.74,67.31,63.44,65.57,66.88,60.72,59.76,60.22,61.12,62.45,60.85,59.36,57.46,57.42,58.1,59.62,56.09,55.18,53.92,55.84,52.56,52.2,52.59,54.0,55.06,56.95,56.21,54.09,55.11,53.86,55.09,54.49,56.06,57.47,56.5,56.9,57.14,59.42,58.51,69.79,73.77,75.58,79.33,82.32,78.96,79.63,82.27,84.62,80.9,83.37,79.98,84.17,82.79,81.88,87.46,84.4,85.38,87.98,85.18,85.12,83.53,78.57,79.43,79.64,77.28,80.32,76.95,78.27,85.13,92.6,92.21,93.66,94.04,97.21,94.02,92.06,92.37,92.52,91.68,87.47,86.02,90.97,87.62,89.09,89.31,90.56,94.15,91.93,88.49,84.19,84.17,85.45,86.68,80.99,81.56,80.87,81.77,80.34,78.04,78.93,79.26,80.39,80.64,77.44,77.11,76.65,76.31,78.33,81.27,80.65,89.04,90.0,88.06,87.87,84.11,85.12,83.8],"h":[41.36,38.47,42.2,40.13,41.79,41.41,38.68,38.37,38.57,37.52,38.6,38.71,39.32,38.67,38.87,37.55,33.86,29.98,31.88,33.72,33.75,36.24,34.73,34.97,34.36,31.95,31.01,33.88,34.67,33.54,30.99,30.96,29.74,29.49,27.91,28.84,29.16,28.62,29.62,28.85,27.62,26.81,24.48,22.45,24.86,24.0,24.84,24.87,23.95,25.16,24.4,25.79,25.97,25.36,25.79,25.97,25.45,24.23,24.58,25.38,26.87,26.51,28.24,26.88,25.66,25.05,24.02,24.42,23.76,25.77,25.96,24.72,25.0,25.42,24.46,23.73,20.98,21.53,21.44,22.64,23.2,22.2,24.93,30.81,32.68,35.45,33.08,32.37,31.4,32.44,31.32,28.82,29.38,31.07,31.56,31.84,30.68,31.22,29.49,28.66,29.0,30.37,29.73,29.01,26.37,27.07,27.87,28.11,27.28,31.2,31.53,32.81,31.29,32.17,30.53,31.02,30.31,30.69,34.65,34.17,36.21,37.26,36.44,37.81,37.26,40.82,41.18,42.11,39.35,39.54,39.14,38.36,37.37,40.32,40.32,39.15,38.66,39.45,37.8,36.82,36.59,36.01,35.17,35.59,36.36,36.85,36.29,38.61,38.76,39.46,41.6,42.28,40.85,44.34,43.53,44.64,43.81,44.62,43.78,40.69,40.7,39.76,41.16,41.3,41.18,41.5,42.46,41.65,40.16,39.94,39.69,41.13,41.25,41.55,41.81,43.71,43.12,42.52,43.27,42.91,43.01,42.0,40.26,38.82,44.13,44.16,41.82,45.69,47.76,48.01,54.84,58.58,54.58,58.7,62.74,61.1,59.51,57.62,61.52,64.41,68.29,72.05,73.58,69.83,74.57,64.43,59.83,56.52,59.75,63.84,57.77,53.28,58.93,59.26,60.7,63.92,66.89,73.58,71.14,68.35,70.26,70.74,66.9,66.25,62.14,63.89,64.07,64.33,61.62,61.4,66.9,65.01,62.34,66.9,70.63,69.84,71.33,70.58,69.15,67.62,67.08,67.47,66.7,67.29,63.4,65.57,66.86,60.7,59.73,60.19,61.11,62.45,60.84,59.34,57.43,57.4,58.1,59.59,56.06,55.14,53.86,55.82,52.5,52.15,52.53,53.96,55.01,56.91,56.16,54.06,55.07,53.83,55.05,54.47,56.03,57.46,56.48,56.88,57.1,59.42,58.48,69.75,73.77,75.56,79.41,82.37,79.01,79.65,82.28,84.64,80.94,83.38,79.99,84.17,82.74,81.9,87.49,84.45,85.43,87.94,85.18,85.12,83.52,78.52,79.39,79.64,77.26,80.33,76.91,78.23,85.12,92.61,92.22,93.75,94.14,97.27,94.09,92.08,92.35,92.59,91.72,87.47,86.03,90.94,87.63,89.06,89.28,90.57,94.23,91.92,88.46,84.15,84.14,85.42,86.65,80.89,81.52,80.79,81.68,80.26,77.94,78.81,79.17,80.35,80.58,77.33,77.01,76.59,76.22,78.23,81.2,80.56,88.96,89.96,87.93,87.84,84.01,85.08,83.78],"g":[-0.5,6.5,9.9,4.5,4.8,7.0,0.5,-3.9,-10.6,-8.0,-9.1,-1.8,3.3,-5.7,-7.7,-2.4,-3.8,-0.3,-4.7,2.7,-11.0,-4.4,-1.4,-13.2,-9.0,-4.7,0.0,-8.0,-6.1,-5.4,-7.4,-4.8,-7.4,-2.4,-6.5,-9.0,-10.6,-9.8,-15.5,-13.9,-12.0,-7.1,-4.1,1.8,0.4,-1.7,-4.8,1.6,3.8,0.4,-6.6,-6.2,-2.3,-6.3,0.8,-2.3,0.8,5.0,6.5,-1.2,-3.3,-2.6,-1.8,-4.1,3.5,6.8,7.1,4.9,-4.2,-7.0,1.5,-0.8,-2.0,-0.8,-2.0,-5.1,1.9,0.9,0.5,-3.1,3.4,-5.0,1.6,-4.5,3.4,8.5,3.3,1.5,1.0,0.0,3.8,6.2,0.7,7.1,1.6,-0.6,4.9,7.4,3.7,2.4,0.3,-0.7,0.0,2.8,0.8,3.3,5.0,1.1,-0.4,0.3,-0.6,0.9,-1.6,-6.5,0.7,-0.6,-5.9,-0.3,2.3,-6.1,0.0,-3.2,-3.3,-3.7,-3.8,-9.1,-9.0,-6.7,-4.8,-2.5,-2.3,-4.2,-7.8,1.0,-4.0,-0.5,0.0,3.0,9.3,4.1,1.1,5.0,4.0,2.5,0.6,-1.6,0.6,-1.3,-5.4,-1.5,-5.0,-8.8,-6.4,-14.2,-7.6,-4.5,-5.9,-3.1,-2.5,3.2,-4.2,-2.5,-6.8,-3.9,-7.3,-7.2,-7.5,-4.8,0.5,-0.5,2.0,4.9,0.0,-2.9,-1.7,-3.9,-5.1,0.2,-7.2,-0.2,-3.0,-0.2,-3.2,0.8,-2.0,2.9,-2.2,3.3,-4.2,5.8,-6.2,4.4,9.2,3.9,7.5,8.0,11.4,22.0,5.2,5.3,1.8,5.5,11.3,2.6,0.3,1.7,-8.2,-2.3,-5.7,-3.4,3.6,4.3,4.6,5.7,-2.6,-9.4,-2.5,9.8,2.2,-0.1,3.7,-0.3,5.7,5.9,10.0,8.6,6.9,9.0,10.1,9.9,3.3,7.2,4.5,4.8,6.1,4.3,4.9,3.4,5.3,-2.5,4.0,6.5,6.3,2.7,6.9,0.3,2.5,2.8,5.9,4.3,1.6,0.2,2.6,3.5,5.2,3.1,1.4,4.4,5.0,6.3,10.4,3.6,10.9,9.8,11.6,7.0,9.8,6.9,8.9,4.3,7.3,5.0,7.4,4.0,5.4,1.7,3.0,3.5,6.5,0.8,5.5,5.6,-0.5,4.0,-9.2,-5.7,-7.0,-2.3,-1.9,-3.0,-4.7,-1.7,-1.4,-0.2,6.2,-2.3,-3.1,-6.3,-5.4,4.8,0.0,0.0,1.1,6.6,4.8,-0.3,3.1,-2.4,5.8,4.3,0.8,-1.2,-1.1,-9.8,-10.5,-6.6,-7.2,-2.2,1.6,-7.6,-4.4,-0.2,-0.3,2.2,-1.0,4.2,3.8,-2.0,-8.5,0.3,2.7,4.8,3.2,4.1,3.2,11.7,4.7,10.5,10.2,10.1,13.0,14.3,11.7,5.1,7.4,14.3,12.6,7.8,10.9,12.9,8.0,10.9,9.2,4.0,14.0,3.6,12.0,4.7,2.6],"m":[0.0,326.0,221.0,-284.0,25.0,108.0,-326.0,-220.0,-339.0,143.0,-67.0,363.0,258.0,-445.0,-103.0,270.0,-53.0,177.0,-234.0,377.0,-682.0,311.0,152.0,-590.0,215.0,233.0,235.0,-435.0,89.0,43.0,-75.0,129.0,-113.0,252.0,-187.0,-143.0,-87.0,51.0,-315.0,101.0,121.0,254.0,168.0,286.0,-67.0,-101.0,-167.0,322.0,101.0,-167.0,-338.0,0.0,194.0,-193.0,355.0,-155.0,154.0,196.0,83.0,-386.0,-118.0,37.0,38.0,-106.0,372.0,156.0,0.0,-104.0,-450.0,-168.0,427.0,-116.0,-61.0,60.0,-59.0,-143.0,337.0,-48.0,-23.0,-187.0,331.0,-409.0,338.0,-361.0,406.0,291.0,-268.0,-91.0,-31.0,-48.0,185.0,96.0,-277.0,340.0,-273.0,-111.0,267.0,130.0,-192.0,-68.0,-105.0,-52.0,33.0,135.0,-103.0,133.0,92.0,-197.0,-71.0,37.0,-48.0,79.0,-122.0,-256.0,358.0,-66.0,-258.0,281.0,147.0,-418.0,307.0,-166.0,0.0,-27.0,0.0,-309.0,0.0,109.0,107.0,114.0,13.0,-89.0,-169.0,442.0,-248.0,174.0,26.0,155.0,291.0,-264.0,-149.0,191.0,-56.0,-71.0,-98.0,-110.0,109.0,-96.0,-207.0,194.0,-190.0,-192.0,130.0,-453.0,339.0,149.0,-67.0,137.0,34.0,274.0,-369.0,86.0,-226.0,146.0,-170.0,0.0,-24.0,141.0,264.0,-50.0,125.0,151.0,-243.0,-145.0,60.0,-120.0,-57.0,267.0,-376.0,347.0,-140.0,140.0,-143.0,199.0,-155.0,249.0,-249.0,287.0,-383.0,503.0,-646.0,547.0,205.0,-247.0,204.0,16.0,155.0,495.0,-823.0,16.0,-171.0,205.0,298.0,-441.0,-115.0,60.0,-466.0,301.0,-186.0,100.0,337.0,17.0,38.0,59.0,-422.0,-362.0,337.0,665.0,-380.0,-119.0,198.0,-199.0,283.0,7.0,174.0,-56.0,-86.0,109.0,31.0,-8.0,-317.0,187.0,-146.0,32.0,82.0,-92.0,36.0,-77.0,92.0,-390.0,325.0,127.0,-15.0,-180.0,193.0,-331.0,114.0,0.0,148.0,-75.0,-133.0,-74.0,120.0,41.0,76.0,-104.0,-87.0,155.0,17.0,62.0,190.0,-334.0,331.0,-57.0,96.0,-219.0,148.0,-136.0,97.0,-240.0,157.0,-118.0,130.0,-173.0,73.0,-178.0,61.0,27.0,149.0,-280.0,227.0,60.0,-308.0,230.0,-681.0,164.0,-49.0,234.0,13.0,-55.0,-77.0,148.0,18.0,56.0,315.0,-423.0,-49.0,-149.0,41.0,515.0,-239.0,0.0,53.0,257.0,-89.0,-252.0,163.0,-278.0,398.0,-71.0,-173.0,-106.0,5.0,-445.0,-37.0,186.0,-21.0,255.0,190.0,-460.0,162.0,207.0,-6.0,134.0,-159.0,262.0,-17.0,-291.0,-342.0,441.0,114.0,90.0,-77.0,48.0,-41.0,387.0,-352.0,288.0,-12.0,-12.0,125.0,77.0,-127.0,-328.0,118.0,316.0,-90.0,-240.0,150.0,118.0,-230.0,142.0,-37.0,-258.0,483.0,-517.0,393.0,-363.0,-106.0]};
+const DATES = DATA.d.map(s => new Date(s + 'T00:00:00Z'));
+const pct = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
+const usd = v => (v < 0 ? '\u2212' : v > 0 ? '+' : '') + '$' + Math.abs(Math.round(v)).toLocaleString('en-US');
+
+makeChart(document.getElementById('root'), {
+  dates: DATES, aria: 'Perp prices on both venues with the price gap below',
+  panels: [
+    { label: 'Perp price (USD)', h: 190, zero: false, tick: v => '$' + v,
+      series: [ { values: () => DATA.b, color: 'var(--s-bin)', width: 6, opacity: 0.35 }, { values: () => DATA.h, color: 'var(--s-hl)', width: 1.75 } ] },
+    { label: 'Price gap between venues (bps)', h: 120, zero: true, tick: v => v + '',
+      series: [ { type: 'bar', values: () => DATA.g, color: v => v >= 0 ? 'var(--s-bin)' : 'var(--s-hl)' } ],
+      marks: [ { i: 198, value: () => DATA.g[198], label: "Worst day, 28 May: 5.2 bps, −$823", short: "28 May: −$823", dy: 4 } ] }
+  ],
+  tooltip: i => [
+    { key: 'var(--s-bin)', value: '$' + DATA.b[i].toFixed(2), label: 'Binance' },
+    { key: 'var(--s-hl)', value: '$' + DATA.h[i].toFixed(2), label: 'Hyperliquid' },
+    { value: (DATA.g[i] > 0 ? '+' : DATA.g[i] < 0 ? '−' : '') + Math.abs(DATA.g[i]).toFixed(1) + ' bps', label: 'Gap' },
+    { sep: true, value: usd(DATA.m[i]), label: 'Daily M2M, $500k per leg' }
+  ]
+});
+
+</script>
