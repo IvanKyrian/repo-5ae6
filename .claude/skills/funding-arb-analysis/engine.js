@@ -109,7 +109,8 @@ function makeChart(root, opts) {
     const ay = bottom + 16;
     let lastX = -1e9;
     opts.dates.forEach((d, i) => {
-      if (d.getUTCDate() !== 1) return;
+      // first row of each month, so a gap over the 1st doesn't drop the label
+      if (i === 0 || d.getUTCMonth() === opts.dates[i - 1].getUTCMonth()) return;
       const x = X(i);
       el('line', { x1: x, x2: x, y1: bottom, y2: bottom + 4 }, svg, { stroke: 'var(--axis)', strokeWidth: 1 });
       if (x - lastX < (narrow ? 34 : 28)) return;

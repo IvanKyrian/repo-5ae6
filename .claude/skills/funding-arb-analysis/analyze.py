@@ -72,6 +72,8 @@ def analyze(df, a):
 
     gaps = df.date.diff().dt.days.dropna()
     R["missing_days"] = int((gaps > 1).sum())
+    R["gap_ranges"] = [(df.date[i - 1] + pd.Timedelta(days=1), df.date[i] - pd.Timedelta(days=1), int(gaps[i]) - 1)
+                       for i in gaps.index if gaps[i] > 1]
     for side in ("long", "short"):
         if f"{side}_n" in df:
             R[f"{side}_n_counts"] = df[f"{side}_n"].value_counts().to_dict()
@@ -121,7 +123,8 @@ def analyze(df, a):
                           gap_before_usd=gap_usd[wm - 1] if wm else 0, gap_after_usd=gap_usd[wm],
                           gap_bps=gap_bps[wm],
                           next_gap_bps=gap_bps[wm + 1] if wm + 1 < n else None,
-                          next_pnl=m2m[wm + 1] if wm + 1 < n else None)
+                          next_pnl=m2m[wm + 1] if wm + 1 < n else None,
+                          prev_pnl=m2m[wm - 1] if wm else 0, prev_gap_bps=gap_bps[wm - 1] if wm else 0)
     R["gap_mean_bps"] = gap_bps.mean()
     R["gap_within10"] = float((gap_bps.abs() < 10).mean())
     R["gap_max_bps"] = gap_bps.abs().max()
@@ -142,7 +145,10 @@ def analyze(df, a):
         s0, s1 = (pd.Timestamp(x) for x in span.split(":"))
         k = (df.date >= s0) & (df.date <= s1)
         idx = df.index[k]
-        ref = idx[0] - 1 if idx[0] > 0 else idx[0]  # price change from the prior close when we have it
+        if a.regime_price_ref == "start":
+            ref = idx[0]  # periods defined close-to-close from the start date's close
+        else:
+            ref = idx[0] - 1 if idx[0] > 0 else idx[0]  # price change from the prior close when we have it
         mm = m2m[k]
         R["regimes"].append(dict(
             name=name, start=s0, end=s1, days=int(k.sum()),
@@ -171,7 +177,8 @@ def charts(df, R, S, a, out):
     L, Sh, A = a.long, a.short, a.asset
     dates = df.date.dt.strftime("%Y-%m-%d").tolist()
     rr = lambda s, k=2: [round(float(v), k) + 0.0 for v in s]
-    period = f"{day(R['start'])} – {day(R['end'])} {R['end']:%Y}"
+    period = (f"{day(R['start'])} – {day(R['end'])} {R['end']:%Y}" if R["start"].year == R["end"].year
+              else f"{day(R['start'])} {R['start']:%Y} – {day(R['end'])} {R['end']:%Y}")
 
     def page(title, body, data, script, cols, rows):
         th = "".join(f"<th>{c}</th>" for c in cols)
@@ -213,7 +220,7 @@ const usd = v => (v < 0 ? '\\u2212' : v > 0 ? '+' : '') + '$' + Math.abs(Math.ro
   <div class="stat"><span>Avg spread, annualized</span><b>{pct(R['full_spread'])}</b></div>
   <div class="stat"><span>APR at {a.leverage:g}× (×{R['mult']:g})</span><b>{pct(R['apr'], 1)}</b></div>
   <div class="stat"><span>Days spread was positive</span><b>{R['pos']} of {R['days']}</b></div>
-  <div class="stat"><span>Funding earned, {usd(R['notional'])} notional</span><b>{usd(R['funding_total'])}</b></div>
+  <div class="stat"><span>Funding earned, {usdk(R['notional'])} notional</span><b>{usd(R['funding_total'])}</b></div>
 </div>
 <div class="bar">
   <div class="legend">
@@ -230,7 +237,7 @@ const usd = v => (v < 0 ? '\\u2212' : v > 0 ? '+' : '') + '$' + Math.abs(Math.ro
   </div>
 </div>
 <div class="plot"><div class="tip" hidden></div></div>
-<p class="foot">{L} settles every {a.long_interval}, {Sh} every {a.short_interval}; each day sums all settlements, then ×365. 7-day avg is trailing. {R['zero']} days had zero spread and {R['neg']} were negative. P&amp;L on {usd(R['notional'])} notional, {usd(R['leg'])} per leg. Worst single day: {day(wd['date'])}, {pct(wd['spread'], 1)} annualized, {usd(wd['pnl'])}. Worst funding drawdown: {dd_lbl}, {usd(dd['pnl'])}{rec}. Source: {a.funding_source}.</p>'''
+<p class="foot">{L} settles every {a.long_interval}, {Sh} every {a.short_interval}; each day sums all settlements, then ×365. 7-day avg is trailing. {R['zero']} days had zero spread and {R['neg']} were negative. P&amp;L on {usdk(R['notional'])} notional, {usdk(R['leg'])} per leg. Worst single day: {day(wd['date'])}, {pct(wd['spread'], 1)} annualized, {usd(wd['pnl'])}. Worst funding drawdown: {dd_lbl}, {usd(dd['pnl'])}{rec}. Source: {a.funding_source}.</p>'''
     script = r'''
 let mode = '7';
 const pick = (a, b) => () => mode === '7' ? DATA[a] : DATA[b];
@@ -308,7 +315,7 @@ makeChart(document.getElementById('root'), {
   ]
 });
 '''.replace("WI", str(wmi)).replace("SHORTLBL", json.dumps(f"{day(wm['date'])}: {usd(wm['pnl'])}", ensure_ascii=False)) \
-       .replace("LABEL", json.dumps(label, ensure_ascii=False)).replace("LONGV", L).replace("SHORTV", Sh).replace("LEG", usd(R["leg"]))
+       .replace("LABEL", json.dumps(label, ensure_ascii=False)).replace("LONGV", L).replace("SHORTV", Sh).replace("LEG", usdk(R["leg"]))
     rows = [[dates[i], f"${df.long_close[i]:.2f}", f"${df.short_close[i]:.2f}", num(gap[i]), usd(m2m[i])] for i in range(len(df))]
     (out / f"{A.lower()}-prices.html").write_text(page(f"{A} Perp Prices", body, pdata, script,
         ["Date", L, Sh, "Gap (bps)", "Daily M2M"], rows))
@@ -326,7 +333,7 @@ makeChart(document.getElementById('root'), {
   <div class="stat"><span>Annualized</span><b>{pct(R['apr'], 1)}</b></div>
 </div>
 <div class="plot"><div class="tip" hidden></div></div>
-<p class="foot">Value = $100 × (1 + cumulative funding P&amp;L ÷ {usd(R['margin'])} margin). Funding only: no compounding, before fees, M2M excluded.</p>'''
+<p class="foot">Value = $100 × (1 + cumulative funding P&amp;L ÷ {usdk(R['margin'])} margin). Funding only: no compounding, before fees, M2M excluded.</p>'''
     script = r'''
 makeChart(document.getElementById('root'), {
   dates: DATES, aria: 'Value of $100 growing from funding alone',
@@ -340,7 +347,7 @@ makeChart(document.getElementById('root'), {
     { sep: true, value: usd(DATA.p[i]), label: 'Cumulative funding, NOTIONAL notional' }
   ]
 });
-'''.replace("NOTIONAL", usd(R["notional"]))
+'''.replace("NOTIONAL", usdk(R["notional"]))
     rows = [[dates[i], f"${v100[i]:.2f}", usd(S["cf"][i])] for i in range(len(df))]
     (out / f"{A.lower()}-growth.html").write_text(page(f"{A} Arb Growth", body, gdata, script,
         ["Date", "Value of $100", "Cum. funding P&amp;L"], rows))
@@ -357,7 +364,10 @@ def report(R, a):
     w(f"**Date: {day(R['end'])} {R['end']:%Y}**\n\n**Strategy category: Funding Rate Arbitrage**\n\n**Expected Yield Range: [TBD]**\n\n**Protocol exposure: {L}, {Sh}**\n\n**Size: TBD**\n\n---\n")
     w("#### **Strategy overview**\n")
     w(f"Long {A} perp on {L}, short {A} perp on {Sh}, and capture the funding spread. The price exposure cancels out, so what's left is the difference in funding between the two venues.\n")
-    w(f"Over the full data series, {day(R['start'])} – {day(R['end'])} {R['end']:%Y} ({R['days']} days, [since our ___ funding data starts on {day(R['start'])}]), the spread averaged **{pct(R['full_spread'])} annualized**.\n")
+    rng = (f"{day(R['start'])} – {day(R['end'])} {R['end']:%Y}" if R["start"].year == R["end"].year
+           else f"{day(R['start'])} {R['start']:%Y} – {day(R['end'])} {R['end']:%Y}")
+    miss = "".join(f"; {n} days missing, {day(g0)} – {day(g1)}" for g0, g1, n in R["gap_ranges"])
+    w(f"Over the full data series, {rng} ({R['days']} days of data{miss}; [why the series starts on {day(R['start'])}]), the spread averaged **{pct(R['full_spread'])} annualized**.\n")
     w(f"At {a.leverage:g}× leverage per leg we multiply the spread by {mult:g}, because {usdk(leg)} of notional per leg earns the spread on {usdk(R['margin'])} of total margin. That gives a **{pct(R['apr'], 1)} APR**.\n")
     w(f"**Sizing**\n\n- {usdk(N)} total notional: {usdk(leg)} per leg\n- {a.leverage:g}× leverage on each leg: {usdk(R['margin'] / 2)} margin on {L} and {usdk(R['margin'] / 2)} on {Sh}, {usdk(R['margin'])} in total\n")
     if a.oi_long or a.oi_short:
@@ -376,6 +386,7 @@ def report(R, a):
 - Days are UTC. Annualized = daily × 365. No compounding, before trading fees.
 """)
     r30 = ("no 30-day stretch in the data had a negative average spread" if R["roll30_pos_share"] == 1
+           else f"the 30-day average spread was positive {R['roll30_pos_share']:.1%} of the time" if R["roll30_pos_share"] > 0.99
            else f"the 30-day average spread was positive {R['roll30_pos_share']:.0%} of the time")
     w(f"**Do we know what causes the spread, or have reason to believe it will persist?** No. [THEORY: fill from the oracle/index comparison in section 3.] {Sh}'s funding has been higher than {L}'s on {R['pos'] / R['days']:.0%} of days, and {r30}. This is a theory, not empirical evidence, and it doesn't explain why the spread would persist.\n")
     w(f"[EMBED growth chart]\n\nThe chart shows how $100 would have grown in the strategy since {day(R['start'])}, funding only: $100 → ${R['growth_end']:.2f}.\n")
@@ -414,7 +425,12 @@ def report(R, a):
     w(f"**What it is:** we're long and short the same perp on two venues, so the M2M risk is the price gap between them. If both prices move the same, M2M is zero. Funding is not included. In practice it doesn't affect the trade profitability, because the gap closes quickly.\n")
     w(f"|  | **Date** | **P&L** | **% of notional** |\n| --- | --- | --- | --- |\n| Worst adverse daily M2M | {day(wm['date'])} | {usd(wm['pnl'])} | {pct(wm['pct'])} |\n")
     if wm["next_gap_bps"] is not None:
-        w(f"**The gap closed the next day. It went from {num(wm['gap_bps'])} bps on {day(wm['date'])} to {num(wm['next_gap_bps'])} bps the day after, recovering {usd(wm['next_pnl'])} of the loss.** [REVIEW: check it actually closed]\n")
+        if abs(wm["next_gap_bps"]) < abs(wm["gap_bps"]) and wm["next_pnl"] > 0:
+            w(f"**The gap closed the next day. It went from {num(wm['gap_bps'])} bps on {day(wm['date'])} to {num(wm['next_gap_bps'])} bps the day after, recovering {usd(wm['next_pnl'])} of the loss.**\n")
+        elif abs(wm["gap_after_usd"]) < abs(wm["gap_before_usd"]):
+            w(f"**This loss was the gap closing, not opening: the day before, {L} traded {num(abs(wm['prev_gap_bps']))} bps {'above' if wm['prev_gap_bps'] > 0 else 'below'} {Sh} (a gain of {usd(wm['prev_pnl'])} that day), and on {day(wm['date'])} it was back to {num(wm['gap_bps'])} bps.**\n")
+        else:
+            w(f"**[REVIEW: the gap did not close the next day ({num(wm['gap_bps'])} → {num(wm['next_gap_bps'])} bps); describe what happened.]**\n")
     w("[EMBED price chart]\n")
     side = Sh if R["gap_mean_bps"] < 0 else L
     w(f"Across the period, the gap between venues averaged {num(R['gap_mean_bps'])} bps ({side} slightly above), stayed within ±10 bps on {R['gap_within10']:.0%} of days and never went past {R['gap_max_bps']:.1f} bps. It doesn't persist: a gap that opens one day mostly closes the next.\n")
@@ -433,7 +449,7 @@ def report(R, a):
 
 Funding on each venue is its perp price vs its own oracle, and both inputs differ: each perp price is set by its own order book, and each oracle is built from different venues.
 
-So day to day, the funding spread and the price gap don't move together much. Over longer periods they do: correlation is {num(c[1], 2)} daily, {num(c[7], 2)} on 7-day averages and {num(c[30], 2)} on 30-day averages. It's negative because the price gap is measured as {L} − {Sh}, so when {Sh} trades above {L} the gap goes negative, {Sh} longs pay more funding, and the spread widens. [REVIEW if the sign or size differs]
+{corr_text(c, L, Sh)}
 """)
 
     if R["regimes"]:
@@ -451,12 +467,35 @@ So day to day, the funding spread and the price gap don't move together much. Ov
         w(f"\n*Note:* all % figures in the table are based on the {usdk(N)} total notional ({usdk(leg)} per leg).\n")
         if "Bear" in regs and "Bull" in regs:
             be, bu = regs["Bear"], regs["Bull"]
-            better = "bull" if bu["apr"] > be["apr"] else "bear"
-            w(f"The strategy clearly does better in the {better} period. The spread averaged {pct(bu['spread'])} ({pct(bu['apr'], 1)} APR) in the bull against {pct(be['spread'])} ({pct(be['apr'], 1)} APR) in the bear, and negative days went from {be['neg']} of {be['days']} to {bu['neg']} of {bu['days']}. M2M stayed small in both periods. [REVIEW wording]\n")
+            hi, lo = (bu, be) if bu["apr"] >= be["apr"] else (be, bu)
+            ratio = hi["apr"] / lo["apr"] if lo["apr"] > 0 else float("inf")
+            how = "clearly does better" if ratio >= 1.5 else "does slightly better"
+            nb, nu = be["neg"] / be["days"], bu["neg"] / bu["days"]
+            negs = (f"negative days were {nb:.0%} of the bear and {nu:.0%} of the bull" )
+            w(f"The strategy {how} in the {hi['name'].lower()} period. The spread averaged {pct(hi['spread'])} ({pct(hi['apr'], 1)} APR) "
+              f"against {pct(lo['spread'])} ({pct(lo['apr'], 1)} APR) in the {lo['name'].lower()}, and {negs}. "
+              + ("It made money in both. " if be["funding"] > 0 and bu["funding"] > 0 else "")
+              + "M2M stayed small in both periods.\n")
 
     w("#### **Conclusion**\n")
     w(f"I don't know why {Sh} funding runs above {L}, but the spread has been consistent. It averaged {pct(R['full_spread'])} annualized over the full track record, which is {pct(R['apr'], 1)} APR at {a.leverage:g}×. Negative stretches are short and cheap. M2M between the venues is small and closes within a day. [REVIEW: recommendation]\n")
     return "\n".join(o)
+
+
+def corr_text(c, L, Sh):
+    vals = f"{num(c[1], 2)} daily, {num(c[7], 2)} on 7-day averages and {num(c[30], 2)} on 30-day averages"
+    why = (f"Negative is the expected sign: the price gap is measured as {L} − {Sh}, so when {Sh} trades above {L} "
+           f"the gap goes negative, {Sh} longs pay more funding, and the spread widens.")
+    if all(v < 0 for v in c.values()):
+        trend = ("Over longer periods the link gets stronger" if c[30] < c[7] < c[1]
+                 else "The link is weak to moderate at every horizon")
+        return f"So the funding spread and the price gap don't move together much day to day. {trend}: correlation is {vals}. {why}"
+    if max(abs(v) for v in c.values()) < 0.2:
+        return (f"There's no meaningful relationship: correlation is {vals}. So the spread isn't coming from one perp trading above "
+                f"the other; it comes from how each venue measures its premium (the oracles above).")
+    return (f"The relationship is weak and doesn't have the expected sign: correlation is {vals}. If the spread came from {Sh}'s perp "
+            f"trading above {L}'s, the correlation would be negative. So the spread is more likely coming from how each venue "
+            f"measures its premium (the oracles above) than from the perp-vs-perp price gap. [REVIEW]")
 
 
 def slack(R, a):
@@ -507,6 +546,8 @@ def main():
     p.add_argument("--leverage", type=float, default=5)
     p.add_argument("--bear", help="YYYY-MM-DD:YYYY-MM-DD")
     p.add_argument("--bull", help="YYYY-MM-DD:YYYY-MM-DD")
+    p.add_argument("--regime-price-ref", choices=["prior", "start"], default="prior",
+                   help="bear/bull price change from the prior day's close (default) or from the start date's close")
     p.add_argument("--oi-long", type=float)
     p.add_argument("--oi-short", type=float)
     p.add_argument("--base-rate", type=float, default=0.0003, help="daily funding at the base interest rate")
