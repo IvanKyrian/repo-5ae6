@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Settle: scheduled cash coming back by month, $M</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#ffffff;--ink:#111826;--ink-2:#4a5262;--ink-3:#737b8c;--rule:#dfe3ea;--rule-2:#eceff4;
+--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--s1-light:#86b6ef;--s2-light:#f5b394;
+--f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1a1d24;--ink:#eef0f4;--ink-2:#b9bfcc;--ink-3:#8a91a0;--rule:#2d323c;--rule-2:#262a33;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s1-light:#1c5cab;--s2-light:#8a3a1a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1d24;--ink:#eef0f4;--ink-2:#b9bfcc;--ink-3:#8a91a0;--rule:#2d323c;--rule-2:#262a33;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--s1-light:#1c5cab;--s2-light:#8a3a1a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body)}
+body{padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
+.fig{max-width:960px;margin:0 auto}
+h1{font-size:16px;font-weight:600;margin:0;line-height:1.3;text-wrap:balance}
+.cap{font-size:12.5px;color:var(--ink-3);margin:3px 0 0}
+.chart{position:relative;margin-top:12px;width:100%}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart svg path,.chart svg text,.chart svg line,.chart svg circle{pointer-events:none}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.note{font-size:12.5px;color:var(--ink-2);margin:10px 0 0;line-height:1.5;max-width:80ch}
+.src{font-size:11.5px;color:var(--ink-3);margin:6px 0 0;font-family:var(--f-mono)}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.4;padding:7px 9px;border-radius:4px;white-space:nowrap;z-index:3;transform:translate(-50%,calc(-100% - 10px));opacity:0;transition:opacity .08s}
+@media (prefers-reduced-motion:reduce){.tip{transition:none}}
+</style></head>
+<body><figure class="fig" id="fig"><h1>Settle: scheduled cash coming back by month, $M</h1><p class="cap">Contractual principal and interest on the $28.2M book if 3Jane stopped buying. Label = cumulative share of principal repaid.</p><div class="chart" id="c"></div><div class="legend" id="lg"></div><p class="note">Longer than Slope (~70-day WAL, 109 days average remaining): ~26% of principal back in 30 days, 53% in 60, 74% in 90, ~100% in 180. *Oct = 27–31 Oct only. Also uncommitted, so 3Jane can stop buying at any time.</p><p class="src">Source: app.3jane.xyz facility detail, Settle liquidity tab (as of 27 Oct 2026)</p></figure>
+<script>
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+const txt=(svg,x,y,s,st,anchor)=>{const t=el('text',{x,y,'text-anchor':anchor||'middle',style:st},svg);t.textContent=s;return t};
+const MONO='fill:var(--ink-3);font:11px var(--f-mono)';
+function tipFor(c){let t=c.querySelector('.tip');if(!t){t=document.createElement('div');t.className='tip';c.appendChild(t)}
+ return{show(h,x,y){t.innerHTML=h;const w=t.offsetWidth,cw=c.clientWidth;x=Math.min(Math.max(x,w/2),Math.max(w/2,cw-w/2));t.style.left=x+'px';t.style.top=y+'px';t.style.opacity=1},hide(){t.style.opacity=0}}}
+function legend(items){const L=document.getElementById('lg');L.innerHTML=items.map(i=>i.dash?`<span><i style="background:none;border-top:2px dashed ${i.c};height:0;border-radius:0;width:14px"></i>${i.n}</span>`:`<span><i style="background:${i.c}"></i>${i.n}</span>`).join('')}
+function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v)));const n=v/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p}
+function topR(x,y,w,h,r){r=Math.min(r,w/2,h);if(h<=0)return '';return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`}
+function rightR(x,y,w,h,r){r=Math.min(r,h/2,w);if(w<=0)return '';return `M${x},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h-r}Q${x+w},${y+h} ${x+w-r},${y+h}H${x}Z`}
+function observe(box,draw){draw();new ResizeObserver(()=>draw()).observe(box)}
+
+/* vertical bars, grouped or stacked */
+function vbar(o){const box=document.getElementById('c');observe(box,()=>{box.querySelectorAll('svg').forEach(s=>s.remove());
+ const W=Math.max(300,box.clientWidth),H=o.h||260,m={l:o.ml||46,r:o.mr||12,t:18,b:(o.rot?56:30)+(o.catSub?16:0)},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':document.title},box);const n=o.cats.length,S=o.series.length;
+ let max=o.yMax;if(!max){max=0;o.cats.forEach((c,i)=>{if(o.stacked)max=Math.max(max,o.series.reduce((a,s)=>a+(s.v[i]||0),0));else o.series.forEach(s=>max=Math.max(max,s.v[i]||0))});(o.refs||[]).forEach(r=>max=Math.max(max,r.v));max=niceMax(max*1.1)}
+ const y=v=>m.t+ih-(v/max)*ih;const ticks=o.ticks||4;
+ for(let k=0;k<=ticks;k++){const v=max*k/ticks;el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),style:'stroke:var(--rule-2)'},svg);txt(svg,m.l-6,y(v)+4,o.yFmt?o.yFmt(v):v,MONO,'end')}
+ const band=iw/n,inner=band*(o.barFrac||0.7),gap=2,tip=tipFor(box);
+ o.cats.forEach((c,i)=>{const x0=m.l+i*band+(band-inner)/2;
+  const hit=el('rect',{x:m.l+i*band,y:m.t,width:band,height:ih,style:'fill:transparent'},svg);
+  if(o.stacked){let acc=0;o.series.forEach((s,j)=>{const v=s.v[i]||0;if(!v)return;const y1=y(acc+v),y0=y(acc);const top=o.series.slice(j+1).every(q=>!q.v[i]);const hh=y0-y1-(acc>0?gap:0);
+    el('path',{d:top?topR(x0,y1,inner,hh,3):`M${x0},${y1}h${inner}v${hh}h${-inner}Z`,style:`fill:${s.cf?s.cf(i):s.c}`},svg);acc+=v})}
+  else{const bw=(inner-gap*(S-1))/S;o.series.forEach((s,j)=>{const v=s.v[i];if(v==null)return;const hh=Math.max(v>0?1.5:0,m.t+ih-y(v));el('path',{d:topR(x0+j*(bw+gap),m.t+ih-hh,bw,hh,3),style:`fill:${s.cf?s.cf(i):s.c}`},svg)})}
+  if(o.top)txt(svg,m.l+i*band+band/2,y(o.top.val(i))-6,o.top.txt(i),'fill:var(--ink-2);font:11px var(--f-mono)');
+  const ev=o.labelEvery||1;if(i%ev===0){const lx=m.l+i*band+band/2,ly=m.t+ih+16;const t=txt(svg,lx,ly,o.catFmt?o.catFmt(c):c,MONO,o.rot?'end':'middle');if(o.rot)t.setAttribute('transform',`rotate(-40 ${lx} ${ly-4})`);if(o.catSub)txt(svg,lx,ly+16,o.catSub(i),'fill:var(--ink);font:600 12px var(--f-mono)')}
+  hit.addEventListener('mouseenter',()=>{hit.style.fill='var(--rule-2)';const tot=o.stacked?o.series.reduce((a,s)=>a+(s.v[i]||0),0):Math.max(...o.series.map(s=>s.v[i]||0));
+   tip.show(`<b>${o.tipCat?o.tipCat(c,i):c}</b><br>`+o.series.filter(s=>s.v[i]!=null&&(!o.stacked||s.v[i])).map(s=>`${s.n}: ${o.tipFmt?o.tipFmt(s.v[i]):s.v[i]}`).join('<br>')+(o.tipExtra?o.tipExtra(i):''),m.l+i*band+band/2,y(tot))});
+  hit.addEventListener('mouseleave',()=>{hit.style.fill='transparent';tip.hide()})});
+ el('line',{x1:m.l,x2:W-m.r,y1:m.t+ih,y2:m.t+ih,style:'stroke:var(--ink-3)'},svg);
+ (o.refs||[]).forEach(r=>{el('line',{x1:m.l,x2:W-m.r,y1:y(r.v),y2:y(r.v),style:'stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:4 4'},svg);if(r.outside)txt(svg,W-m.r+6,y(r.v)+4,r.label,'fill:var(--ink-2);font:11px var(--f-mono)','start');else txt(svg,r.left?m.l+4:W-m.r,y(r.v)-6,r.label,'fill:var(--ink-2);font:11px var(--f-mono)',r.left?'start':'end')})})}
+
+/* horizontal bars with optional range segment and vertical reference lines */
+function hbars(o){const box=document.getElementById('c');observe(box,()=>{box.querySelectorAll('svg').forEach(s=>s.remove());
+ const W=Math.max(300,box.clientWidth),narrow=W<600,rowH=34,lab=narrow?0:230,m={l:lab+8,r:56,t:28,b:26};const rows=o.rows.length;
+ const H=m.t+rows*(rowH+(narrow?16:0))+m.b,iw=W-m.l-m.r;const x=v=>m.l+(v/o.max)*iw;
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':document.title},box);const tip=tipFor(box);
+ for(let v=0;v<=o.max+1e-9;v+=o.step){el('line',{x1:x(v),x2:x(v),y1:m.t-4,y2:H-m.b,style:'stroke:var(--rule-2)'},svg);txt(svg,x(v),H-m.b+16,o.fmt(v),MONO)}
+ o.rows.forEach((r,i)=>{const rh=rowH+(narrow?16:0),y0=m.t+i*rh+(narrow?16:0),bh=18,by=y0+(rowH-bh)/2-4;
+  if(narrow)txt(svg,m.l,y0-2,r.n,'fill:var(--ink-2);font:12px var(--f-body)','start');else txt(svg,m.l-10,by+bh/2+4,r.n,'fill:var(--ink-2);font:12.5px var(--f-body)','end');
+  const lo=r.lo,hi=r.hi==null?r.lo:r.hi;
+  el('path',{d:r.hi==null?rightR(m.l,by,x(lo)-m.l,bh,3):`M${m.l},${by}H${x(lo)}V${by+bh}H${m.l}Z`,style:`fill:${r.c||'var(--s1)'}`},svg);
+  if(r.hi!=null)el('path',{d:rightR(x(lo)+2,by,x(hi)-x(lo)-2,bh,3),style:`fill:${r.c2||'var(--s1-light)'}`},svg);
+  txt(svg,x(hi)+6,by+bh/2+4,r.lbl,'fill:var(--ink);font:11.5px var(--f-mono)','start');
+  const hit=el('rect',{x:0,y:by-6,width:W,height:bh+12,style:'fill:transparent'},svg);svg.insertBefore(hit,svg.firstChild);
+  hit.addEventListener('mouseenter',()=>tip.show(`<b>${r.n}</b><br>${r.tip||r.lbl}`,x(hi),by));hit.addEventListener('mouseleave',()=>tip.hide())});
+ (o.refs||[]).forEach((r,k)=>{const xx=x(r.v);el('line',{x1:xx,x2:xx,y1:m.t-10,y2:H-m.b,style:'stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:4 4'},svg);
+  txt(svg,xx+(k%2?4:-4),m.t-14,r.label,'fill:var(--ink-2);font:11px var(--f-mono)',k%2?'start':'end')})})}
+</script>
+<script>
+
+const cats=['Oct*','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun'];
+const p=[1.2,7.6,8.2,5.3,2.8,2.6,0.47,0.05,0.04],f=[0,0.37,0.29,0.15,0.07,0.04,0.01,0,0];
+let cum=0;const cp=p.map(v=>(cum+=v,cum/28.25*100));
+vbar({cats,series:[{n:'Principal',v:p,c:'var(--s2)'},{n:'Interest & fees',v:f,c:'var(--s2-light)'}],stacked:true,yMax:10,ticks:5,yFmt:v=>'$'+v.toFixed(0),tipFmt:v=>'$'+v.toFixed(2)+'M',h:250,barFrac:0.6,
+ top:{val:i=>p[i]+f[i],txt:i=>(i>=1&&i<=5)?Math.round(cp[i])+'%':''},tipExtra:i=>`<br>Cumulative principal: ${cp[i].toFixed(0)}%`});
+legend([{n:'Principal',c:'var(--s2)'},{n:'Interest & fees',c:'var(--s2-light)'}]);
+
+</script></body></html>
