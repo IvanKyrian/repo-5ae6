@@ -1,0 +1,655 @@
+<title>3Jane Diligence Brief</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: single reading column (credit memo), wide figures break out to 1040px; sticky section nav on top. */
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --ink:#111826; --ink-2:#4a5262; --ink-3:#737b8c;
+  --rule:#dfe3ea; --rule-2:#eceff4; --accent:#1f3a8a; --accent-soft:#e8edfb;
+  --good:#0ca30c; --warn:#b77900; --bad:#d03b3b; --good-bg:#e9f6e9; --warn-bg:#fbf3e0; --bad-bg:#fbeaea;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s1-light:#86b6ef;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111318; --surface:#1a1d24; --ink:#eef0f4; --ink-2:#b9bfcc; --ink-3:#8a91a0;
+  --rule:#2d323c; --rule-2:#232730; --accent:#9db4ff; --accent-soft:#1f2740;
+  --good:#3ec43e; --warn:#fab219; --bad:#ef6b6b; --good-bg:#16291a; --warn-bg:#2d2512; --bad-bg:#2f1a1a;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s1-light:#1c5cab;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111318; --surface:#1a1d24; --ink:#eef0f4; --ink-2:#b9bfcc; --ink-3:#8a91a0;
+  --rule:#2d323c; --rule-2:#232730; --accent:#9db4ff; --accent-soft:#1f2740;
+  --good:#3ec43e; --warn:#fab219; --bad:#ef6b6b; --good-bg:#16291a; --warn-bg:#2d2512; --bad-bg:#2f1a1a;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s1-light:#1c5cab;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.6;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.col{max-width:760px}
+header.top{background:var(--surface);border-bottom:1px solid var(--rule)}
+header.top .wrap{padding-block:28px 22px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(30px,5vw,44px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:26px;font-weight:600;margin-bottom:6px}
+h3{font-size:19px;font-weight:600}
+p{margin:0}
+.lede{color:var(--ink-2);font-size:17px;max-width:68ch;margin-top:10px}
+nav.sec{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--rule)}
+nav.sec .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+nav.sec a{font-family:var(--f-mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);text-decoration:none;padding:6px 10px;border-radius:4px;white-space:nowrap}
+nav.sec a:hover,nav.sec a:focus-visible{background:var(--accent-soft);color:var(--accent);outline:none}
+main section{padding-block:40px 8px;border-bottom:1px solid var(--rule-2)}
+main section:last-child{border-bottom:0;padding-bottom:56px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.sub{color:var(--ink-2);max-width:68ch}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden;margin-top:22px}
+.kpi{background:var(--surface);padding:14px 16px;min-width:0}
+.kpi .v{font-family:var(--f-mono);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.verdict{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:4px;padding:18px 20px}
+.verdict ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:8px}
+.verdict li{padding-left:2px}
+ul.clean{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+strong{font-weight:600}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule-2);vertical-align:top}
+th{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:500;background:var(--surface)}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.fig{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:16px 16px 12px;min-width:0}
+.fig h4{font-family:var(--f-body);font-size:14.5px;font-weight:600;margin:0}
+.fig .cap{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.fig .note{font-size:12.5px;color:var(--ink-3);margin-top:8px}
+.chart{position:relative;margin-top:10px;width:100%}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart svg path,.chart svg text,.chart svg line,.chart svg circle{pointer-events:none}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.4;padding:7px 9px;border-radius:4px;white-space:nowrap;z-index:3;transform:translate(-50%,calc(-100% - 10px));opacity:0;transition:opacity .08s}
+.tip b{font-weight:600}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.grid2>*{min-width:0}
+.fac{display:flex;flex-direction:column;gap:14px;padding-block:22px 6px;border-top:1px solid var(--rule)}
+.fac:first-of-type{border-top:0}
+.fac-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px}
+.chip{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.03em;padding:2px 8px;border-radius:3px;border:1px solid var(--rule);color:var(--ink-2);background:var(--surface);white-space:nowrap}
+.chip.good{color:var(--good);border-color:currentColor;background:var(--good-bg)}
+.chip.warn{color:var(--warn);border-color:currentColor;background:var(--warn-bg)}
+.chip.bad{color:var(--bad);border-color:currentColor;background:var(--bad-bg)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px 18px;font-size:13.5px}
+.facts div{min-width:0}
+.facts .k{color:var(--ink-3);font-size:12px}
+.facts .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:15px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.two>*{min-width:0}
+@media (max-width:720px){.two{grid-template-columns:1fr}}
+.box{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px 16px}
+.box h5{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin:0 0 6px;font-weight:500}
+.flag{display:flex;gap:10px;align-items:flex-start}
+.flag .dot{flex:none;width:8px;height:8px;border-radius:50%;margin-top:8px;background:var(--warn)}
+.flag .dot.bad{background:var(--bad)}
+.flag .dot.good{background:var(--good)}
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:18px}
+@media (max-width:720px){.calc{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.field label{font-size:13px;color:var(--ink-2);display:flex;justify-content:space-between;gap:8px}
+.field label output{font-family:var(--f-mono);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input[type=number]{font-family:var(--f-mono);font-size:14px;padding:6px 8px;border:1px solid var(--rule);border-radius:4px;background:var(--bg);color:var(--ink);width:100%}
+.seg{display:flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.seg button{flex:1;font-family:var(--f-body);font-size:13px;padding:7px 8px;background:var(--bg);color:var(--ink-2);border:0;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--surface)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.out{display:flex;flex-direction:column;gap:10px}
+.out .row{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--rule-2);padding-bottom:8px;font-size:14px}
+.out .row span:last-child{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.out .big{font-family:var(--f-mono);font-size:30px;font-weight:500}
+.hurdles{display:flex;flex-wrap:wrap;gap:6px}
+.q{counter-reset:q;display:flex;flex-direction:column;gap:0;border:1px solid var(--rule);border-radius:6px;background:var(--surface)}
+.q li{list-style:none;counter-increment:q;padding:12px 16px 12px 52px;position:relative;border-bottom:1px solid var(--rule-2)}
+.q li:last-child{border-bottom:0}
+.q li::before{content:counter(q);position:absolute;left:16px;top:12px;font-family:var(--f-mono);font-size:13px;color:var(--accent);width:24px}
+.q .why{display:block;font-size:13px;color:var(--ink-3);margin-top:2px}
+.q-wrap{display:flex;flex-direction:column;gap:10px}
+.copy{font-family:var(--f-mono);font-size:12px;padding:6px 10px;border:1px solid var(--rule);background:var(--surface);color:var(--ink-2);border-radius:4px;cursor:pointer;align-self:flex-start}
+.copy:hover{color:var(--accent);border-color:var(--accent)}
+.src{font-size:13px;color:var(--ink-2)}
+.src a{color:var(--accent)}
+a{color:var(--accent)}
+.stackdiag{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;font-size:13.5px}
+.layer{border:1px solid var(--rule);border-radius:4px;padding:10px 12px;background:var(--surface)}
+.layer .t{font-family:var(--f-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)}
+.layer .n{font-family:var(--f-mono);font-size:18px;margin-top:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Re7 Capital · Liquidity Fund · Pre-call diligence · Data as of 5 Nov 2026</div>
+    <h1 style="margin-top:8px">3Jane: USD3, its credit lines, and LCC</h1>
+    <p class="lede">What actually backs USD3 today, how much has to default before the senior tranche loses money, and whether Levered Callable Capital clears our hurdle. Built from the live 3Jane app, their docs, the data room (Slope tape, LendSwift vintages, Settle memo, LendSwift SPE agreement) and the Telegram answers.</p>
+    <div class="kpis">
+      <div class="kpi"><div class="v">$115.0M</div><div class="l">USD3 + sUSD3 TVL</div></div>
+      <div class="kpi"><div class="v">6.30%</div><div class="l">USD3 APY (senior)</div></div>
+      <div class="kpi"><div class="v">13.23%</div><div class="l">sUSD3 APY (junior)</div></div>
+      <div class="kpi"><div class="v">7.4%</div><div class="l">sUSD3 share of pool (first loss)</div></div>
+      <div class="kpi"><div class="v">80%</div><div class="l">Backing in two forward-flow books</div></div>
+      <div class="kpi"><div class="v">$18.0M</div><div class="l">LCC promised · no calls yet</div></div>
+    </div>
+  </div>
+</header>
+
+<nav class="sec" aria-label="Sections">
+  <div class="wrap">
+    <a href="#summary">Summary</a><a href="#backing">Backing</a><a href="#facilities">Credit lines</a><a href="#losses">Loss scenarios</a><a href="#liquidity">Liquidity</a><a href="#lcc">LCC</a><a href="#risks">Risks</a><a href="#questions">Call questions</a><a href="#sources">Sources</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="summary" class="stack">
+  <h2>Summary</h2>
+  <div class="verdict col">
+    <div class="eyebrow">Bottom line</div>
+    <ol>
+      <li><strong>USD3 is mostly an SMB trade-credit book.</strong> 80% of backing is two forward-flow books that 3Jane owns outright: Slope (56%) and Settle (24%). Neither has an overcollateralization cushion. LendSwift, the scary-looking consumer line, is only 5.7% of backing and the best protected.</li>
+      <li><strong>USD3 principal is well protected. USD3 yield is not.</strong> Losses come out of pool income first (~$7.8M/yr), then sUSD3 ($8.5M). USD3 principal only takes a hit after ~$16M of losses in a year, or ~$8.5M in a sudden shock. Slope's full history (1.7% loss per 2‑month cycle) would wipe out the yield but not touch principal.</li>
+      <li><strong>Liquidity is better than we feared in July.</strong> If 3Jane stopped redeploying, ~43% of the pool would be cash within 30 days and ~66% within 60. The real liquidity risk is the ~$53M of Morpho loops against USD3 and PT‑USD3, with the PT maturing 17 Dec.</li>
+      <li><strong>LCC fees are real USDC but too small for us as built.</strong> 1.25% on the promise = 20.2% on margin. The per-address cap is $1M of promise, which is ~$15k a year. We need a bespoke allocation for it to matter.</li>
+      <li><strong>Looping does not clear the hurdle on organic yield.</strong> The live USD3/USDC Morpho market borrows at 6.43% against USD3 at 6.30%, which is negative carry. Looping only works with cheap borrowing (≤ ~5.2% for a 12% hurdle) or JANE. That applies to looping now and to looping a call.</li>
+    </ol>
+  </div>
+  <div class="col stack">
+    <p class="sub"><strong>Recommendation going into the call:</strong> the opportunity worth pursuing is <em>LCC with a bespoke cap</em>, sized as a 1.25% overlay on liquidity we hold anyway. We should be comfortable holding USD3 for 35 days if called. Don't underwrite the loop at today's borrow rates, and treat JANE as upside. Before IC we need: (a) why Slope is in amortization and what its repurchase and trigger terms are, (b) the USD3l Morpho market terms, (c) the LendSwift participation and lien chain.</p>
+  </div>
+  <div class="tbl" style="margin-top:6px">
+    <table>
+      <thead><tr><th>What changed since our July call</th><th class="r">July 2026</th><th class="r">Now</th><th>Read</th></tr></thead>
+      <tbody>
+        <tr><td>TVL</td><td class="r">~$75M</td><td class="r">$115.0M</td><td>Growth largely from loops and JANE farming</td></tr>
+        <tr><td>Slope (trade credit)</td><td class="r">$48–50M</td><td class="r">$64.9M</td><td>Now in <strong>amortization</strong>, $0 remaining capacity</td></tr>
+        <tr><td>Settle (inventory finance)</td><td class="r">—</td><td class="r">$27.5M</td><td>New. $14.8M back-book (Sep) plus forward flow</td></tr>
+        <tr><td>LendSwift (consumer warehouse)</td><td class="r">~$5M</td><td class="r">$6.6M</td><td>65.6% of the $10M line drawn</td></tr>
+        <tr><td>Crypto credit lines (V1)</td><td class="r">~$4.5M</td><td class="r">$1.1M</td><td>Sunsetting as expected, 0% loss</td></tr>
+        <tr><td>LCC</td><td class="r">Pitch</td><td class="r">Live</td><td>2 facilities, $18.0M promised, loop helper audited 27 Oct</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="backing" class="stack">
+  <h2>What backs USD3</h2>
+  <p class="sub col">Depositors put in USDC and get USD3 (senior) or sUSD3 (junior). Both sit on top of one pool of assets. sUSD3 absorbs losses first and earns more; USD3 is paid first and loses last. Both tranches take a fixed <em>share</em> of whatever the pool earns, so if income drops, USD3's yield drops too. Seniority protects USD3's principal, not its coupon.</p>
+
+  <div class="fig">
+    <h4>Pool backing by asset, $115.4M</h4>
+    <div class="cap">Source: app.3jane.xyz/info/backing, 5 Nov 2026. Hover a segment for the amount.</div>
+    <div class="chart" id="ch-backing"></div>
+    <div class="legend" id="lg-backing"></div>
+  </div>
+
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Bucket</th><th>What it is, in one line</th><th class="r">$M</th><th class="r">% pool</th><th>Structural cushion before 3Jane loses</th></tr></thead>
+      <tbody>
+        <tr><td>Slope</td><td>3Jane owns ~1,660 SMB trade-credit loans (pay supplier now, repay in 30–90 days)</td><td class="r">64.9</td><td class="r">56.3%</td><td>None. Eligibility rules and repurchase terms (not public)</td></tr>
+        <tr><td>Settle</td><td>3Jane owns ~1,090 e-commerce inventory or payables loans (30–180 days)</td><td class="r">27.5</td><td class="r">23.8%</td><td>None. Obligor reps, EPD putback, repurchase</td></tr>
+        <tr><td>Aave USDC</td><td>Idle cash, instantly available</td><td class="r">11.2</td><td class="r">9.7%</td><td>n/a</td></tr>
+        <tr><td>LendSwift</td><td>Senior loan to LendSwift's SPV against ~22k subprime installment loans</td><td class="r">6.6</td><td class="r">5.7%</td><td><strong>41% OC</strong> (min 33%), haircuts, DACA, cash sweep</td></tr>
+        <tr><td>Erebor bank cash</td><td>Cash in transit to or from facilities</td><td class="r">4.1</td><td class="r">3.6%</td><td>n/a</td></tr>
+        <tr><td>Crypto credit lines</td><td>V1 unsecured lines to crypto users, payments only</td><td class="r">1.1</td><td class="r">0.9%</td><td>Borrowers' verified assets ($7.6M)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="stackdiag">
+    <div class="layer"><div class="t">Loss layer 1 · facility cushions</div><div class="n">LendSwift only</div><div class="sub" style="font-size:13px">25% originator first loss on 5.7% of the pool. Slope and Settle have none.</div></div>
+    <div class="layer"><div class="t">Loss layer 2 · pool income</div><div class="n">~$7.8M / yr</div><div class="sub" style="font-size:13px">What's paid to USD3 and sUSD3 today. Losses reduce it before touching principal.</div></div>
+    <div class="layer"><div class="t">Loss layer 3 · sUSD3</div><div class="n">~$8.5M</div><div class="sub" style="font-size:13px">7.4% of TVL. The app shows USD3 OC at 108.9% vs an 8% target. The docs' loss example assumes 15%.</div></div>
+    <div class="layer"><div class="t">Loss layer 4 · USD3</div><div class="n">$106.5M</div><div class="sub" style="font-size:13px">Accountable proof of reserves: $115.05M reserves vs $115.01M supply (100.04%).</div></div>
+  </div>
+</section>
+
+<section id="facilities" class="stack">
+  <h2>The three credit lines</h2>
+  <p class="sub col">In all three, the credit risk is the end borrowers (businesses or consumers), not the fintech itself. The fintech still matters a lot, because it underwrites, services and collects, and in two of three cases stands behind repurchase promises.</p>
+
+  <article class="fac" id="slope">
+    <div class="fac-head"><h3>Slope · SMB trade credit · forward flow</h3><span class="chip">56% of backing</span><span class="chip warn">Amortizing · $0 capacity</span><span class="chip good">0.00% NCO to date</span></div>
+    <div class="two">
+      <div class="stack">
+        <p><strong>What it is.</strong> B2B "buy now, pay later". A business buys inventory, Slope pays the supplier, and the business repays in 30–90 days. Slope's partners include Amazon (sellers), Samsung and IKEA business checkout. 3Jane <em>buys the loans outright</em> into its own SPV (true sale). Slope keeps servicing them for 0.5%.</p>
+        <p><strong>How 3Jane is protected.</strong> Loans must pass an eligibility box at purchase: >12 months in business, >$1M revenue, SBFE tier ≤4, size caps of $350k (T≤3) / $200k (T4), no EPD, plus Slope's reps and repurchase. After that it's just the ~16% APR and then sUSD3. There is no OC layer. The app lists the trigger schedule and R&W repurchase as <em>"Pending data"</em>.</p>
+        <p><strong>The real risk.</strong> Losses come from a few big names, not from the crowd. In Slope's own tape, the top 20 obligors caused 81% of all losses, and one manufacturer lost $2.9M (37.5% of its exposure). Recoveries were ~0%. Remove three obligors and lifetime losses drop from 1.72% to 0.27%.</p>
+      </div>
+      <div class="box">
+        <h5>Live snapshot · 4 Nov 2026</h5>
+        <div class="facts">
+          <div><div class="k">Outstanding</div><div class="v">$63.5M</div></div>
+          <div><div class="k">Loans</div><div class="v">1,662</div></div>
+          <div><div class="k">WA APR</div><div class="v">16.0%</div></div>
+          <div><div class="k">Avg remaining</div><div class="v">47 days</div></div>
+          <div><div class="k">Repaid ≤30d / ≤60d</div><div class="v">42% / 71%</div></div>
+          <div><div class="k">Top states</div><div class="v">NY 23 · NJ 14 · CA 12</div></div>
+          <div><div class="k">History analysed</div><div class="v">5,080 loans · $260M</div></div>
+          <div><div class="k">Obligors (history)</div><div class="v">679 · top‑10 39%</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="fig">
+      <h4>Slope realized net charge-offs by origination quarter, % of originated</h4>
+      <div class="cap">3Jane data room, terminated loans only. 2026Q1 is 76% matured. "Eligible" = loans that pass today's forward-flow box.</div>
+      <div class="chart" id="ch-slope"></div>
+      <div class="legend" id="lg-slope"></div>
+      <p class="note">Read: the box would have avoided every historical loss, but part of that comes from filtering out early-payment defaults after the fact. That only holds in practice if Slope must buy back EPD loans, so the repurchase terms matter. The same data gives realized asset IRRs of 4.2% (whole book), 17.9% (ex‑3 obligors) and 22.3% (box).</p>
+    </div>
+  </article>
+
+  <article class="fac" id="settle">
+    <div class="fac-head"><h3>Settle · inventory or payables finance · back-book + forward flow</h3><span class="chip">24% of backing</span><span class="chip">Deploying</span><span class="chip good">0.00% NCO to date</span></div>
+    <div class="two">
+      <div class="stack">
+        <p><strong>What it is.</strong> Settle pays an e-commerce or DTC brand's supplier invoice, and the brand repays over 30–180 days in 30‑day fee blocks (54% single payment at maturity, 46% amortizing). 3Jane bought Settle's seasoned back-book (~$14.8M, par + 0.40%) in September and keeps buying new loans under a forward flow of up to $25M. Settle has originated $3.8B since 2019.</p>
+        <p><strong>How 3Jane is protected.</strong> No OC. The protection is contractual. Settle represents that no obligor is delinquent or in forbearance <em>anywhere</em> in Settle's book. Any breach or first-payment default triggers mandatory repurchase. Collections are remitted twice weekly, and Nelnet is backup servicer. 3Jane's own memo prices expected loss at 0.81% of balance (9.4% IRR, breakeven at 2.3%).</p>
+        <p><strong>The real risk.</strong> Lumpy obligors (67 in the back-book, largest 3%) in tariff-sensitive e-commerce, plus single-pay principal that hasn't been tested yet. The repurchase promise is only as good as Settle. Settle Inc. has $44M of equity against $303M of warehouse debt, turned its first profitable half in H1‑26, and the seller is a subsidiary with no standalone financials.</p>
+      </div>
+      <div class="box">
+        <h5>Live snapshot · 27 Oct 2026</h5>
+        <div class="facts">
+          <div><div class="k">Outstanding</div><div class="v">$28.2M</div></div>
+          <div><div class="k">Loans</div><div class="v">1,088</div></div>
+          <div><div class="k">WA APR</div><div class="v">16.9%</div></div>
+          <div><div class="k">Avg remaining</div><div class="v">109 days</div></div>
+          <div><div class="k">Repaid ≤30d / ≤90d</div><div class="v">26% / 74%</div></div>
+          <div><div class="k">Lifetime loss</div><div class="v">1.5% orig.</div></div>
+          <div><div class="k">H1‑26 run-rate</div><div class="v">3.9% ann.</div></div>
+          <div><div class="k">Deferred-ever loss</div><div class="v">5.4% vs 1.5%</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>3Jane's Settle back-book scenarios (memo, 21 Sep 2026)</th><th class="r">Loss, % balance</th><th class="r">Net IRR</th><th class="r">Weight</th></tr></thead>
+        <tbody>
+          <tr><td>Central: reps hold, losses at segment history</td><td class="r">0.81%</td><td class="r">9.4%</td><td class="r">45%</td></tr>
+          <tr><td>Softening: modest post-sale deterioration</td><td class="r">1.0%</td><td class="r">8.5–8.7%</td><td class="r">40%</td></tr>
+          <tr><td>Stress: deterioration beyond the reps</td><td class="r">1.4%+</td><td class="r">6.5–7.5%</td><td class="r">15%</td></tr>
+          <tr><td>Breakeven (≈ largest obligor defaults in full)</td><td class="r">2.3%</td><td class="r">0%</td><td class="r">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  <article class="fac" id="lendswift">
+    <div class="fac-head"><h3>LendSwift · subprime consumer installment · senior warehouse</h3><span class="chip">5.7% of backing</span><span class="chip good">OC 41.4% · in range</span><span class="chip warn">31% of balance 31+ DPD</span></div>
+    <div class="two">
+      <div class="stack">
+        <p><strong>What it is.</strong> Payday-style installment loans: ~$500, ~4 months, ~690% APR, to underserved US consumers. 3Jane <em>does not own these loans</em>. It holds a senior secured participation in a loan to LendSwift's SPV, advanced at 75% of eligible collateral and paying a 15% coupon. The line is $10M, revolving until May 2027 with final maturity Nov 2027.</p>
+        <p><strong>How 3Jane is protected.</strong> Eligible collateral must stay at least 1.33× what's owed, tested weekly. Delinquent loans are haircut out first: anything >45 DPD gets zero credit, 30–45 DPD gets 60%, and a last payment under 50% of schedule gets zero. All collections go to a DACA account. A breach stops recycling and sweeps cash to 3Jane.</p>
+        <p><strong>Why the high DPD isn't the issue.</strong> At 690% APR the pool is priced for many borrowers never paying in full. Seasoned vintages collect 1.5× the cash lent, and the pool is back to 100% by month 3–4. The issues are elsewhere: LendSwift itself (the backup servicer is "cold"), regulation (59% of balance in Texas), and the legal chain (see risks).</p>
+      </div>
+      <div class="box">
+        <h5>Live snapshot · 30 Oct 2026</h5>
+        <div class="facts">
+          <div><div class="k">Note outstanding</div><div class="v">$6.56M</div></div>
+          <div><div class="k">Net collateral</div><div class="v">$9.4M</div></div>
+          <div><div class="k">Loans pledged</div><div class="v">21,923</div></div>
+          <div><div class="k">Largest obligor</div><div class="v">0.0002%</div></div>
+          <div><div class="k">New / repeat</div><div class="v">69% / 31%</div></div>
+          <div><div class="k">Texas share</div><div class="v">~59%</div></div>
+          <div><div class="k">OC range since Jun</div><div class="v">34.7–46.6%</div></div>
+          <div><div class="k">Headroom to OC min</div><div class="v">~$0.56M</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="fig">
+        <h4>From pledged loans to 3Jane's coverage, $M</h4>
+        <div class="cap">Borrowing-base waterfall from the facility detail, 30 Oct 2026. Pieces are as reported and rounded.</div>
+        <div class="chart" id="ch-wf"></div>
+        <p class="note">3Jane's note loses its first dollar only after ~$7.2M of the $13.8M gross (loans + cash) is gone. A further ~$0.56M of haircuts would breach the 33% OC test, which triggers the cash sweep. That is a protection, not a loss.</p>
+      </div>
+      <div class="fig">
+        <h4>Days past due, share of pledged balance</h4>
+        <div class="cap">Current snapshot. Loans over 45 DPD already get zero borrowing-base credit.</div>
+        <div class="chart" id="ch-dpd"></div>
+        <p class="note">31+ DPD has stayed in a 25–33% band every week since May. Very little reaches 91+, so loans are being charged off or cured around 90 days.</p>
+      </div>
+    </div>
+    <div class="fig">
+      <h4>Cash collected by vintage, % of loan amount</h4>
+      <div class="cap">Facility detail, 30 Oct 2026. Contractual loan-amount basis, which is lower than the 152% "of funded cash" figure LendSwift quotes. Lighter bars are still collecting.</div>
+      <div class="chart" id="ch-vint"></div>
+      <div class="legend" id="lg-vint"></div>
+      <p class="note">2025 vintages finished at 120–141%. Projecting Apr–May 2026 (the first vintages funded under 3Jane's line) along the 2025 curve gives ~117–121%: cash-positive, but at the low end. Worth asking whether growth (69% new customers) is diluting quality.</p>
+    </div>
+  </article>
+</section>
+
+<section id="losses" class="stack">
+  <h2>How much has to default?</h2>
+  <p class="sub col">Losses flow in a fixed order: pool income → sUSD3 → USD3. The chart puts five 12‑month scenarios on that ladder. The scenarios are my calibration from the data room, assuming today's mix of loans stays roughly the same. Use them to frame the discussion, not as a forecast.</p>
+  <div class="fig">
+    <h4>12‑month credit losses vs. the layers protecting USD3, $M</h4>
+    <div class="cap">Income = $7.8M/yr currently paid to holders. sUSD3 = $8.5M. USD3 principal is hit beyond ~$16.3M a year, or beyond $8.5M if a loss lands all at once.</div>
+    <div class="chart" id="ch-ladder"></div>
+    <div class="legend" id="lg-ladder"></div>
+  </div>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Scenario</th><th>What happens</th><th class="r">Loss, 12m</th><th class="r">USD3</th><th class="r">sUSD3</th><th class="r">Odds*</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Base</strong></td><td>Slope at ex‑3‑obligor history (0.27% per cycle), Settle at FY25 run-rate (2.9%), LendSwift losses stay inside its OC</td><td class="r">$1.9M</td><td class="r">~4.8% yield</td><td class="r">~10% yield</td><td class="r">55%</td></tr>
+        <tr><td><strong>Soft</strong></td><td>Slope at 2× that (0.6% per cycle), Settle at the memo's expected loss (4.4% annualized)</td><td class="r">$3.7M</td><td class="r">~3.3% yield</td><td class="r">~7% yield</td><td class="r">25%</td></tr>
+        <tr><td><strong>Stress</strong></td><td>Slope repeats its whole-book history incl. blow-ups (1.72% per cycle), Settle at 2× H1‑26</td><td class="r">$9.4M</td><td class="r">~0% yield, principal intact</td><td class="r">−18%</td><td class="r">13%</td></tr>
+        <tr><td><strong>Severe</strong></td><td>Six months of Slope's worst quarter (4.8% per cycle), then purchases stop. Settle 2× H1‑26, and the LendSwift note loses half after a servicer failure</td><td class="r">$15.5M</td><td class="r">0% yield, principal intact (just)</td><td class="r">−91%</td><td class="r">5%</td></tr>
+        <tr><td><strong>Tail</strong></td><td>Fraud or servicer collapse at Slope: 25% of its book lost within a quarter, plus the LendSwift note halved</td><td class="r">$19.5M</td><td class="r"><strong>−8.5%</strong></td><td class="r">−100%</td><td class="r">2%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="src col">*My indicative odds. Probability-weighted, USD3 principal loss is ~0.2% a year, but expected <em>yield</em> is around 3.5% (4.8% in the base case) vs today's 6.3%, because both books have had zero realized losses so far. Key question: does the 6.3% already net an expected-loss provision?</p>
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Breakeven for USD3, one facility at a time, 0% recovery</th><th class="r">Sudden shock</th><th class="r">Over 12 months</th><th>Historical reference</th></tr></thead>
+      <tbody>
+        <tr><td>Slope ($64.9M)</td><td class="r">13% of book</td><td class="r">3.9% per 2‑month cycle</td><td>Whole book 1.72% · worst quarter 4.82% · worst month 10.5%</td></tr>
+        <tr><td>Settle ($27.5M)</td><td class="r">31% of book</td><td class="r">~58% annualized</td><td>H1‑26 3.9% annualized · lifetime 1.5% of originations</td></tr>
+        <tr><td>LendSwift ($6.6M note)</td><td class="r">Cannot reach USD3 alone</td><td class="r">Cannot reach USD3 alone</td><td>The whole note is smaller than sUSD3. ~52% of gross collateral would have to vanish before 3Jane loses $1</td></tr>
+        <tr><td>All FCC together ($99M)</td><td class="r">8.6% of book</td><td class="r">16.5% of book per year</td><td>3Jane docs: illustrative senior break at 19% with a 15% junior. Today's junior is 7.4%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="sub col">Slope's short loans cut both ways. Each loss only hits one 2‑month cycle, but the book turns over ~6.6 times a year (~$417M of purchases at today's size). If Slope's worst quarter (4.8%) repeated for a full year, it would reach USD3. The defence is that the eligibility box, the size caps and 3Jane's ability to stop buying kick in long before that.</p>
+</section>
+
+<section id="liquidity" class="stack">
+  <h2>Liquidity: how fast the book turns into cash</h2>
+  <p class="sub col">In July the concern was that loans can't be called early, so a run would depeg USD3 on secondary markets. That's still true, but the loans are short. If 3Jane stopped redeploying and borrowers paid on schedule, here's how much of the pool would be cash.</p>
+  <div class="fig">
+    <h4>Cumulative cash if 3Jane stops redeploying, $M</h4>
+    <div class="cap">Aave + Erebor cash today, plus scheduled principal from Slope and Settle (facility liquidity tabs). LendSwift excluded. Dashed line = $115M TVL.</div>
+    <div class="chart" id="ch-liq"></div>
+    <div class="legend" id="lg-liq"></div>
+  </div>
+  <div class="stack">
+    <div class="box stack">
+      <h5>Where the run risk actually sits</h5>
+      <div class="flag"><span class="dot bad"></span><p>About <strong>$53M of USDC is borrowed on Morpho</strong> against USD3 or PT‑USD3: $10.2M in USD3/USDC (LLTV 91.5%, 6.43% borrow) and $43.3M across three PT‑USD3‑17DEC2026 markets. That's roughly half of USD3, and it's levered, much of it for JANE.</p></div>
+      <div class="flag"><span class="dot"></span><p><strong>The PT matures on 17 Dec.</strong> Loopers have to roll or unwind, which could bring a wave of USD3 redemptions. Slope's scheduled $22.5M of December repayments would cover a lot of it. Ask if that's by design.</p></div>
+      <div class="flag"><span class="dot"></span><p>USD3 redeems only <em>"up to the tranche ratio"</em> and subject to cash. sUSD3 has a 1‑month lock, then cooldown. Committed liquidity facilities are still on the roadmap.</p></div>
+    </div>
+    <div class="tbl">
+      <table>
+        <thead><tr><th>Morpho market (Ethereum)</th><th class="r">LLTV</th><th class="r">Borrowed</th><th class="r">Borrow</th><th class="r">Supply</th></tr></thead>
+        <tbody>
+          <tr><td>USD3 / USDC</td><td class="r">91.5%</td><td class="r">$10.2M</td><td class="r">6.43%</td><td class="r">5.48%</td></tr>
+          <tr><td>PT‑USD3‑17DEC / USDC (a)</td><td class="r">86%</td><td class="r">$17.3M</td><td class="r">8.73%</td><td class="r">7.44%</td></tr>
+          <tr><td>PT‑USD3‑17DEC / USDC (b)</td><td class="r">86%</td><td class="r">$14.5M</td><td class="r">6.34%</td><td class="r">5.63%</td></tr>
+          <tr><td>PT‑USD3‑17DEC / USDT</td><td class="r">91.5%</td><td class="r">$11.4M</td><td class="r">3.49%</td><td class="r">3.18%</td></tr>
+          <tr><td>sUSD3 / USDC</td><td class="r">77%</td><td class="r">$0</td><td class="r">—</td><td class="r">—</td></tr>
+          <tr><td>USD3l / USDC (for LCC loops)</td><td class="r">86%</td><td class="r" colspan="3">Not live yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section id="lcc" class="stack">
+  <h2>LCC: what we'd actually earn</h2>
+  <div class="two">
+    <div class="stack">
+      <p><strong>Mechanics, with $1M.</strong> Post $75k margin (7.5%) and promise $1M. You earn 1.25% × $1M = $12.5k a year from 3Jane, plus Aave on the $75k (~$2.6k): <strong>20.2% on margin</strong>. The app's 41.6% also counts JANE at an assumed $250M FDV. 3Jane pays the fee out of pool interest. It's cheaper for them than holding idle cash that earns less than USD3 pays.</p>
+      <p><strong>On a call</strong> (pro-rata, at most once per 21‑day epoch) you have 9 days to send USDC. You get <strong>USD3, not sUSD3</strong>, locked for 35 days, with +0.75% APR during the lock. A matching slice of margin is released. Miss the call and your whole margin goes to the backstop auction. You get back what the auction doesn't need, and nothing if no bidder fills it.</p>
+      <p><strong>The loop</strong> uses one atomic transaction. Flash-borrow, fund the call, post the USD3l on Morpho, and borrow up to 84% LTV (liquidation at 86%). You only need 16% of the promise as capital. To promise 6.25× your net worth, the wallet must show that net worth in verifiable DeFi assets.</p>
+    </div>
+    <div class="box stack">
+      <h5>Live LCC book · 5 Nov 2026</h5>
+      <div class="facts">
+        <div><div class="k">Total promised</div><div class="v">$18.0M</div></div>
+        <div><div class="k">Margin staked</div><div class="v">$1.35M</div></div>
+        <div><div class="k">Exiting</div><div class="v">$3.9M (22%)</div></div>
+        <div><div class="k">Calls so far</div><div class="v">None</div></div>
+        <div><div class="k">Next call window</div><div class="v">~10 Nov (ep. 3)</div></div>
+        <div><div class="k">Concentration</div><div class="v">Top‑1 6% · top‑10 42%</div></div>
+      </div>
+      <div class="flag"><span class="dot bad"></span><p><strong>Cap: $1M promise per address, one position per address</strong>, across two facilities (USDC 14.3/25.3M, USDT 0.85/4.2M). 3Jane can revoke positions it sees as splitting to get around the cap.</p></div>
+      <div class="flag"><span class="dot"></span><p>Exit takes at least 2 epochs (42 days) through a per-epoch cap. The app shows 6.67% per epoch (the docs say 20%), and epoch 4 is already full. You stay callable while you wait.</p></div>
+      <div class="flag"><span class="dot good"></span><p>Your Cred Score of 845 ("Very Good") changes nothing today. Score-based terms aren't live yet. The docs promise up to 5× promise APY later, but wumpy said only JANE would change.</p></div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Option</th><th>What we end up holding</th><th class="r">Organic return, no JANE</th><th>Clears 12–15%?</th><th>Main risk</th></tr></thead>
+      <tbody>
+        <tr><td><strong>A. LCC, never called</strong></td><td>$75k margin per $1M promise</td><td class="r">20.2% on margin · ~11.3% on the $160k we must keep verifiable · +1.25% overlay if fully covered</td><td>On margin, yes. All-in, only at loop-sized backing</td><td>Size cap. 42+ day exit. 3Jane discretion</td></tr>
+        <tr><td><strong>B. Called → hold USD3</strong></td><td>USD3 at 6.3% (+0.75% for 35 days)</td><td class="r">~6.4%</td><td>No, but cheap to hold briefly: ~0.5% drag vs a 12% hurdle over 35 days</td><td>USD3 credit and exit liquidity on day 35</td></tr>
+        <tr><td><strong>C. Called → loop 6.25×</strong></td><td>$1M USD3l, $840k debt</td><td class="r">~6.1% at 6.43% borrow (10.3% during cooldown)</td><td>Only if borrow ≤ ~5.2%, or with JANE</td><td>2‑pt LTV buffer. Negative carry. Unwind blocked if USD3 withdrawals are limited</td></tr>
+        <tr><td><strong>D. Loop USD3 now, skip LCC</strong></td><td>USD3/USDC Morpho, LLTV 91.5%</td><td class="r">~5.8% at 5× (borrow 6.43% > yield 6.30%)</td><td>No. It's a JANE farm</td><td>Same as C, plus PT roll on 17 Dec</td></tr>
+        <tr><td><strong>E. Lend USDC to loopers</strong></td><td>Supply side of USD3(l)/USDC markets</td><td class="r">5.5–7.4% today. 3Jane targeted ~10% net with incentives in July</td><td>Possibly, with incentives</td><td>USD3 impairment above ~14%. Oracle type</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="calc" id="calc">
+    <div>
+      <div class="eyebrow" style="margin-bottom:10px">LCC return calculator · edit the inputs</div>
+      <div class="field"><label for="in-promise">Promise, USD <output id="o-promise"></output></label><input id="in-promise" type="number" value="1000000" min="25000" step="25000"></div>
+      <div class="field"><label for="in-called">Share of promise called and funded <output id="o-called"></output></label><input id="in-called" type="range" min="0" max="100" step="5" value="0"></div>
+      <div class="field"><label>How a call is funded</label>
+        <div class="seg" role="group" aria-label="Funding mode"><button type="button" id="b-spot" aria-pressed="false">Spot 1×</button><button type="button" id="b-loop" aria-pressed="true">Loop 6.25×</button></div></div>
+      <div class="field"><label for="in-usd3">USD3 APY <output id="o-usd3"></output></label><input id="in-usd3" type="range" min="2" max="12" step="0.05" value="6.3"></div>
+      <div class="field"><label for="in-borrow">Morpho borrow rate <output id="o-borrow"></output></label><input id="in-borrow" type="range" min="2" max="14" step="0.05" value="6.43"></div>
+      <div class="field"><label for="in-aave">Aave yield on margin and idle capital <output id="o-aave"></output></label><input id="in-aave" type="range" min="0" max="8" step="0.1" value="3.5"></div>
+      <div class="field"><label for="in-jane">JANE, % APR on margin <output id="o-jane"></output></label><input id="in-jane" type="range" min="0" max="40" step="0.5" value="0"></div>
+      <p class="src">The app implies ~21% JANE on margin at a $250M FDV. Final JANE supply is 1.1–6.7B, locked until the final mint (2026).</p>
+    </div>
+    <div class="out" aria-live="polite">
+      <div><div class="eyebrow">All-in return on capital kept ready</div><div class="big" id="r-allin">–</div><div class="hurdles" id="r-hurdles"></div></div>
+      <div class="row"><span>Annual income</span><span id="r-income">–</span></div>
+      <div class="row"><span>Capital deployed (margin + call equity)</span><span id="r-dep">–</span></div>
+      <div class="row"><span>Return on deployed capital</span><span id="r-ondep">–</span></div>
+      <div class="row"><span>Capital to keep ready for a full call</span><span id="r-ready">–</span></div>
+      <div class="row"><span>Promise fee + funding bonus</span><span id="r-fee">–</span></div>
+      <div class="row"><span>USD3 carry net of Morpho interest</span><span id="r-carry">–</span></div>
+      <p class="src">"All-in" counts the capital you must hold to fund a full call (promise ÷ leverage), assuming the idle part earns the Aave rate. That's the comparable figure for our 12–15% hurdle. Steady state, one year, no losses, no gas or slippage.</p>
+    </div>
+  </div>
+</section>
+
+<section id="risks" class="stack">
+  <h2>Key risks, ranked</h2>
+  <div class="col stack">
+    <div class="flag"><span class="dot bad"></span><p><strong>1. Slope concentration and opacity.</strong> 56% of backing, owned outright, no OC. Repurchase and trigger terms aren't public, and the book is in amortization for reasons we don't know. Historical losses came from a few names with ~0% recovery. I don't have the Slope sale agreement. Ask for it.</p></div>
+    <div class="flag"><span class="dot bad"></span><p><strong>2. Thin junior.</strong> sUSD3 is 7.4% of the pool vs the 15% used in 3Jane's own loss example. A sudden loss of 8.6% of the FCC book reaches USD3.</p></div>
+    <div class="flag"><span class="dot bad"></span><p><strong>3. Leverage and liquidity loop.</strong> ~$53M of Morpho debt against USD3 and PT‑USD3, sized to JANE farming. If JANE disappoints at the final mint or borrow rates spike, deleveraging turns into USD3 redemptions. The PT matures on 17 Dec.</p></div>
+    <div class="flag"><span class="dot"></span><p><strong>4. LendSwift legal chain.</strong> The SPE's LLC agreement only imposes separateness "so long as" it's party to a <em>Participation Agreement with Series 78 of Cadence Group (Percent)</em>. That fits Jeremy's description of a "participation", so 3Jane may sit behind Percent as lender of record. The LLC agreement also has no independent manager, no limit on a voluntary bankruptcy filing, and the member can dissolve it by written consent. Bankruptcy remoteness has to come from documents we haven't seen.</p></div>
+    <div class="flag"><span class="dot"></span><p><strong>5. Originator and servicer failure.</strong> LendSwift has only a cold backup servicer, and at 690% APR collections depend on active servicing. Settle is thinly capitalized ($44M equity vs $303M warehouse debt). Its repurchase and EPD protections are worth as much as Settle Funding LLC, which has no standalone financials.</p></div>
+    <div class="flag"><span class="dot"></span><p><strong>6. Regulatory.</strong> LendSwift charges ~690% APR with 59% of balance in Texas. A state action could impair collections quickly. Ask about the licensing model.</p></div>
+    <div class="flag"><span class="dot"></span><p><strong>7. Governance.</strong> 3Jane can change the USD3/sUSD3 income split and controls call timing and size. It can pause LCC with no time limit and revoke positions. Upgrades go through a 7‑day timelock. LCC's leveraged helper was audited by Guardian on 27 Oct. The core was audited by Veridise, Sherlock and Electisec.</p></div>
+    <div class="flag"><span class="dot good"></span><p><strong>Mitigants that are real:</strong> very short assets (2‑month WA remaining term), weekly surveillance, granular LendSwift pool with strong OC, live loan-level transparency, independent proof of reserves (Accountable), bank-held cash (Erebor), and a carefully done Settle diligence memo.</p></div>
+  </div>
+</section>
+
+<section id="questions" class="stack">
+  <h2>Questions for today's call</h2>
+  <p class="sub col">Ordered by how much the answer changes the IC case. The first eight are must-asks.</p>
+  <div class="q-wrap">
+    <button class="copy" type="button" id="copyq">Copy questions</button>
+    <ol class="q" id="qlist">
+      <li>Slope shows "Amortization" with $0 remaining capacity. Has the forward flow ended, paused or hit its commitment? Is it renewing, and where does the ~$45M coming back in Nov–Dec go?<span class="why">56% of backing. This decides what USD3 looks like in Q1.</span></li>
+      <li>What are Slope's repurchase, EPD putback and trigger terms? The app shows "Pending data". Can you share the Slope sale agreement? We didn't receive it.<span class="why">The 0% "eligible" loss history depends on EPD loans being put back.</span></li>
+      <li>Largest obligors in today's Slope and Settle pools (top‑1, top‑10 %) and the hard caps?<span class="why">Slope's losses were name-driven. One obligor lost $2.9M.</span></li>
+      <li>Borrowers pay ~16% APR but the facilities show 8.65% net APY. Who keeps the gap, and is any of it subordinated to 3Jane?<span class="why">If the originator's spread sits below us, it's credit enhancement. If it's paid off the top, it isn't.</span></li>
+      <li>How and when is a defaulted FCC loan marked in the USD3/sUSD3 price (FULL_MARKDOWN_DURATION)? Does the 6.3% already net an expected-loss provision?<span class="why">Zero realized losses so far. Our base case puts USD3 nearer 4.5–5%.</span></li>
+      <li>sUSD3 is 7.4% of the pool. What's the hard minimum (MIN_SUSD3_BACKING_RATIO), and what happens below the 8% OC target? Do USD3 mints stop?<span class="why">The junior is the only cushion for 80% of the book.</span></li>
+      <li>What's the plan for the 17 Dec PT‑USD3 maturity, with ~$43M of Morpho debt against it? Is Slope's amortization timed for it?<span class="why">Biggest near-term redemption risk.</span></li>
+      <li>LCC sizing: can Re7 get a bespoke allocation above the $1M-per-address cap (e.g. $10–20M promise)? Better fee or exit terms for size?<span class="why">At $1M the trade earns ~$15k a year. Immaterial.</span></li>
+      <li>How likely and how large are calls over the next three epochs? wumpy said none for at least two epochs and up to ~$15M per call.<span class="why">Sets how much of the return is fee vs USD3 carry.</span></li>
+      <li>USD3l/USDC Morpho market: launch date, oracle (exchange rate or market price), IRM and target rate, who supplies and whether it's incentivised. Could Re7 curate or supply it?<span class="why">The live USD3/USDC market is negative carry at 6.43%. It's also option E for us.</span></li>
+      <li>LendSwift: who is lender of record and lien holder, 3Jane's SPV or Percent Series 78? What are 3Jane's rights if Percent fails? What makes the SPE bankruptcy-remote without an independent manager?</li>
+      <li>LendSwift: what happens to collections if LendSwift stops operating, given the cold backup servicer? What's the Texas licensing model (CSO/CAB)? Are Apr–May 2026 vintages running below 2025?</li>
+      <li>Settle: is there a parent guarantee from Settle Inc. for the repurchase obligations? Status of the forward-flow docs and the late‑2026 equity raise?</li>
+      <li>JANE: final mint date, total supply, and how LCC emissions are sized. Cred Score: does a higher score boost the promise fee (docs) or only JANE (wumpy)?</li>
+      <li>LCC exit: the app shows 6.67% unstake capacity per epoch vs 20% in the docs, and epoch 4 is full. Realistic exit time for a $5M+ position?</li>
+    </ol>
+  </div>
+</section>
+
+<section id="sources" class="stack">
+  <h2>Sources and notes</h2>
+  <ul class="clean src col">
+    <li>Live app, read 5 Nov 2026: <a href="https://app.3jane.xyz/info/backing">backing</a>, <a href="https://app.3jane.xyz/info/pulls/fcc">FCC facilities</a> and facility detail tabs (LendSwift as of 30 Oct, Slope 4 Nov, Settle 27 Oct), <a href="https://app.3jane.xyz/info/lcc/promised">LCC promised</a>, <a href="https://app.3jane.xyz/lcc">LCC</a>, <a href="https://app.3jane.xyz/info/apy">APY</a>, <a href="https://accountable.3jane.xyz/">Accountable proof of reserves</a>.</li>
+    <li>Docs: <a href="https://docs.3jane.xyz/backing/fcc">FCC</a>, <a href="https://docs.3jane.xyz/backing/fcc/credit-enhancement-and-loss-distribution">credit enhancement</a>, <a href="https://docs.3jane.xyz/usd3-susd3/pool-interest-rates">pool interest rates</a>, <a href="https://docs.3jane.xyz/levered-callable-capital-lcc/mechanism/stakers">LCC stakers</a>, <a href="https://docs.3jane.xyz/levered-callable-capital-lcc/mechanism/promise-looping">promise looping</a>, <a href="https://docs.3jane.xyz/levered-callable-capital-lcc/parameters">LCC parameters</a>, <a href="https://docs.3jane.xyz/levered-callable-capital-lcc/cred-score">Cred Score</a>, <a href="https://docs.3jane.xyz/jane/liquidity-mining">liquidity mining</a>, <a href="https://docs.3jane.xyz/resources/audits">audits</a>.</li>
+    <li>Morpho markets: Morpho Blue API, read 5 Nov 2026 (Ethereum, USD3, sUSD3 and PT‑USD3 collateral).</li>
+    <li>Data room: Slope historical tape analysis (5,080 terminated loans, originations to 15 May 2026), LendSwift vintage performance (to 31 Mar 2026), Settle back-book LP memo (21 Sep 2026), LendSwift SPE I LLC agreement (13 Nov 2024). Telegram answers from wumpy and Jeremy Obadia (26–27 Oct).</li>
+    <li>Derived figures (mine): Slope annual purchases = $63.5M × 365 / 55.6‑day WAL. Scenario yields assume today's 85.7% / 14.3% USD3 / sUSD3 income split and a constant asset mix. The liquidity ladder assumes on-schedule repayment and no redeployment.</li>
+  </ul>
+</section>
+</main>
+
+<script>
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+const fmt1=v=>(Math.round(v*10)/10).toFixed(1);
+function tipFor(container){let t=container.querySelector('.tip');if(!t){t=document.createElement('div');t.className='tip';container.appendChild(t)}return{show(html,x,y){t.innerHTML=html;const w=t.offsetWidth,cw=container.clientWidth;x=Math.min(Math.max(x,w/2),Math.max(w/2,cw-w/2));t.style.left=x+'px';t.style.top=y+'px';t.style.opacity=1},hide(){t.style.opacity=0}}}
+function legend(id,items){const L=document.getElementById(id);if(!L)return;L.innerHTML=items.map(i=>`<span><i style="background:${i.c}${i.dash?';background:none;border-top:2px dashed '+i.c+';height:0;border-radius:0;width:14px':''}"></i>${i.n}</span>`).join('')}
+function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v)));const n=v/p;const s=n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10;return s*p}
+function topRounded(x,y,w,h,r){r=Math.min(r,w/2,h);if(h<=0)return '';return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`}
+function rightRounded(x,y,w,h,r){r=Math.min(r,h/2,w);if(w<=0)return '';return `M${x},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h-r}Q${x+w},${y+h} ${x+w-r},${y+h}H${x}Z`}
+
+/* Generic vertical bar chart: grouped or stacked */
+function vbar(id,o){
+  const box=document.getElementById(id);if(!box)return;
+  const draw=()=>{
+    box.querySelectorAll('svg').forEach(s=>s.remove());
+    const W=Math.max(280,box.clientWidth),H=o.h||240,m={l:44,r:10,t:16,b:o.rot?52:30};
+    const iw=W-m.l-m.r,ih=H-m.t-m.b;
+    const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':o.label||''},box);
+    const n=o.cats.length,S=o.series.length;
+    let max=o.yMax;if(!max){max=0;o.cats.forEach((c,i)=>{if(o.stacked){max=Math.max(max,o.series.reduce((a,s)=>a+(s.v[i]||0),0))}else o.series.forEach(s=>max=Math.max(max,s.v[i]||0))});if(o.ref)max=Math.max(max,o.ref);max=niceMax(max*1.08)}
+    const y=v=>m.t+ih-(v/max)*ih;
+    const ticks=4;for(let k=0;k<=ticks;k++){const v=max*k/ticks;el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),style:'stroke:var(--rule-2);stroke-width:1'},svg);const t=el('text',{x:m.l-6,y:y(v)+4,'text-anchor':'end',style:'fill:var(--ink-3);font:11px var(--f-mono)'},svg);t.textContent=o.yFmt?o.yFmt(v):v}
+    const band=iw/n,inner=band*(o.barFrac||0.7),gap=2;
+    const tip=tipFor(box);
+    o.cats.forEach((c,i)=>{
+      const x0=m.l+i*band+(band-inner)/2;
+      if(o.stacked){let acc=0;o.series.forEach((s,j)=>{const v=s.v[i]||0;if(!v)return;const y1=y(acc+v),y0=y(acc);const isTop=o.series.slice(j+1).every(ss=>!(ss.v[i]));const hgt=y0-y1-(acc>0?gap:0);
+          const d=isTop?topRounded(x0,y1,inner,hgt,3):`M${x0},${y1}h${inner}v${hgt}h${-inner}Z`;el('path',{d,style:`fill:${s.c}`},svg);acc+=v})}
+      else{const bw=(inner-gap*(S-1))/S;o.series.forEach((s,j)=>{const v=s.v[i];if(v==null)return;const bx=x0+j*(bw+gap);const yy=y(v);const hgt=Math.max(v>0?1.5:0,m.t+ih-yy);el('path',{d:topRounded(bx,m.t+ih-hgt,bw,hgt,3),style:`fill:${(s.cf?s.cf(i):s.c)}`},svg)})}
+      if(o.topLabel){const t=el('text',{x:m.l+i*band+band/2,y:y(o.topLabel.val(i))-6,'text-anchor':'middle',style:'fill:var(--ink-2);font:11px var(--f-mono)'},svg);t.textContent=o.topLabel.txt(i)}
+      const every=o.labelEvery||1;
+      if(i%every===0||i===n-1&&o.labelLast){const lx=m.l+i*band+band/2,ly=m.t+ih+16;const t=el('text',{x:lx,y:ly,'text-anchor':o.rot?'end':'middle',transform:o.rot?`rotate(-45 ${lx} ${ly-4})`:'',style:'fill:var(--ink-3);font:11px var(--f-mono)'},svg);t.textContent=o.catFmt?o.catFmt(c):c}
+      const hit=el('rect',{x:m.l+i*band,y:m.t,width:band,height:ih,style:'fill:transparent;cursor:default'},svg);
+      hit.addEventListener('mouseenter',()=>{hit.style.fill='var(--rule-2)';hit.style.fillOpacity=.5;const total=o.stacked?o.series.reduce((a,s)=>a+(s.v[i]||0),0):Math.max(...o.series.map(s=>s.v[i]||0));const yy=y(total);tip.show(`<b>${o.tipCat?o.tipCat(c,i):c}</b><br>`+o.series.filter(s=>s.v[i]!=null).map(s=>`${s.n}: ${o.tipFmt?o.tipFmt(s.v[i]):s.v[i]}`).join('<br>')+(o.tipExtra?o.tipExtra(i):''),m.l+i*band+band/2,yy)});
+      hit.addEventListener('mouseleave',()=>{hit.style.fill='transparent';tip.hide()});
+    });
+    svg.querySelectorAll('rect').forEach(r=>svg.insertBefore(r,svg.firstChild.nextSibling));
+    el('line',{x1:m.l,x2:W-m.r,y1:m.t+ih,y2:m.t+ih,style:'stroke:var(--ink-3);stroke-width:1'},svg);
+    if(o.ref){el('line',{x1:m.l,x2:W-m.r,y1:y(o.ref),y2:y(o.ref),style:'stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:4 4'},svg);const t=el('text',{x:o.refLeft?m.l+4:W-m.r,y:y(o.ref)-6,'text-anchor':o.refLeft?'start':'end',style:'fill:var(--ink-2);font:11px var(--f-mono)'},svg);t.textContent=o.refLabel||''}
+  };
+  draw();new ResizeObserver(()=>draw()).observe(box);
+}
+
+/* 1. Backing composition: 100% stacked horizontal bar */
+(function(){
+  const box=document.getElementById('ch-backing');
+  const data=[['Slope',64.94,'var(--s1)'],['Settle',27.45,'var(--s2)'],['Aave USDC',11.17,'var(--s3)'],['LendSwift',6.59,'var(--s4)'],['Erebor cash',4.14,'var(--s5)'],['Credit lines',1.08,'var(--s6)']];
+  const total=data.reduce((a,d)=>a+d[1],0);
+  legend('lg-backing',data.map(d=>({n:`${d[0]} ${(100*d[1]/total).toFixed(1)}%`,c:d[2]})));
+  const draw=()=>{box.querySelectorAll('svg').forEach(s=>s.remove());const W=Math.max(280,box.clientWidth),H=74;const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':'Pool backing by asset'},box);const tip=tipFor(box);
+    let x=0;data.forEach((d,i)=>{const w=W*d[1]/total;const g=i<data.length-1?2:0;const seg=el('rect',{x,y:8,width:Math.max(1,w-g),height:40,rx:i===0||i===data.length-1?3:0,style:`fill:${d[2]}`},svg);
+      if(w>60){const t=el('text',{x:x+8,y:66,style:'fill:var(--ink-2);font:11.5px var(--f-mono)'},svg);t.textContent=`${d[0]} $${fmt1(d[1])}M`}
+      const cx=x+w/2;seg.addEventListener('mouseenter',()=>{seg.style.opacity=.85;tip.show(`<b>${d[0]}</b><br>$${d[1].toFixed(2)}M · ${(100*d[1]/total).toFixed(1)}% of pool`,cx,8)});seg.addEventListener('mouseleave',()=>{seg.style.opacity=1;tip.hide()});x+=w})};
+  draw();new ResizeObserver(draw).observe(box);
+})();
+
+/* 2. Slope quarterly NCO */
+vbar('ch-slope',{cats:['2025Q1','2025Q2','2025Q3','2025Q4','2026Q1*'],series:[{n:'All loans',v:[0,2.27,4.82,0.26,1.98],c:'var(--s1)'},{n:'Excl. 3 problem obligors',v:[0,0.07,0.38,0.27,0.52],c:'var(--s2)'},{n:'Eligible under today’s box',v:[0,0,0,0.01,0],c:'var(--s3)'}],yMax:6,yFmt:v=>v.toFixed(1)+'%',tipFmt:v=>v.toFixed(2)+'%',h:230,label:'Slope net charge-offs by quarter'});
+legend('lg-slope',[{n:'All loans (1.72% lifetime)',c:'var(--s1)'},{n:'Excl. 3 problem obligors (0.27%)',c:'var(--s2)'},{n:'Eligible under today’s box (0.00%)',c:'var(--s3)'}]);
+
+/* 3. LendSwift DPD */
+vbar('ch-dpd',{cats:['≤15','16–30','31–60','61–90','91–120','121+'],series:[{n:'Share of balance',v:[59.4,9.6,16.0,13.7,0.8,0.5],c:'var(--s1)'}],yFmt:v=>v.toFixed(0)+'%',tipFmt:v=>v.toFixed(1)+'%',h:220,topLabel:{val:i=>[59.4,9.6,16.0,13.7,0.8,0.5][i],txt:i=>[59.4,9.6,16.0,13.7,0.8,0.5][i].toFixed(1)+'%'},tipCat:c=>c+' days past due',label:'LendSwift DPD distribution'});
+
+/* 4. LendSwift waterfall */
+(function(){
+  const box=document.getElementById('ch-wf');
+  const steps=[{n:'Pledged loans',a:0,b:11.8,c:'var(--s1)',lbl:'11.8'},{n:'+ DACA cash',a:11.8,b:13.8,c:'var(--s1)',lbl:'2.0'},{n:'− >45 DPD',a:11.1,b:13.8,c:'var(--s2)',lbl:'2.7'},{n:'− 30–45 DPD',a:10.83,b:11.1,c:'var(--s2)',lbl:'0.27'},{n:'− Shortfall',a:9.4,b:10.83,c:'var(--s2)',lbl:'1.5'},{n:'Net collateral',a:0,b:9.4,c:'var(--s1)',lbl:'9.4'},{n:'Min. at 33% OC',a:0,b:8.84,c:'var(--s1-light)',lbl:'8.84'},{n:'Owed to 3Jane',a:0,b:6.65,c:'var(--s3)',lbl:'6.65'}];
+  const tips=['$11.8M outstanding loan balance','$2.0M cash in the collection account','$2.7M of loans >45 DPD get zero credit','$0.27M: 30–45 DPD loans get 60% credit','$1.5M: last payment under 50% of schedule','$9.4M eligible collateral after haircuts','$8.84M = 1.33 × $6.65M obligations','$6.56M note + $0.08M next coupon'];
+  const draw=()=>{box.querySelectorAll('svg').forEach(s=>s.remove());const W=Math.max(280,box.clientWidth),H=260,m={l:34,r:6,t:14,b:58};const iw=W-m.l-m.r,ih=H-m.t-m.b;const max=15;const y=v=>m.t+ih-(v/max)*ih;
+    const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':'LendSwift borrowing base waterfall'},box);const tip=tipFor(box);
+    [0,5,10,15].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),style:'stroke:var(--rule-2)'},svg);const t=el('text',{x:m.l-6,y:y(v)+4,'text-anchor':'end',style:'fill:var(--ink-3);font:11px var(--f-mono)'},svg);t.textContent=v});
+    const band=iw/steps.length,bw=band*0.64;
+    steps.forEach((s,i)=>{const x=m.l+i*band+(band-bw)/2;const yt=y(s.b),hh=y(s.a)-y(s.b);const p=el('path',{d:s.a===0?topRounded(x,yt,bw,hh,3):`M${x},${yt}h${bw}v${hh}h${-bw}Z`,style:`fill:${s.c}`},svg);
+      const t=el('text',{x:x+bw/2,y:yt-5,'text-anchor':'middle',style:'fill:var(--ink-2);font:10.5px var(--f-mono)'},svg);t.textContent=s.lbl;
+      const lx=x+bw/2,ly=m.t+ih+12;const lt=el('text',{x:lx,y:ly,'text-anchor':'end',transform:`rotate(-40 ${lx} ${ly})`,style:'fill:var(--ink-3);font:10.5px var(--f-body)'},svg);lt.textContent=s.n;
+      const hit=el('rect',{x:m.l+i*band,y:m.t,width:band,height:ih,style:'fill:transparent'},svg);svg.insertBefore(hit,svg.firstChild);hit.addEventListener('mouseenter',()=>tip.show(`<b>${s.n}</b><br>${tips[i]}`,x+bw/2,yt));hit.addEventListener('mouseleave',()=>tip.hide())});
+    el('line',{x1:m.l,x2:W-m.r,y1:m.t+ih,y2:m.t+ih,style:'stroke:var(--ink-3)'},svg)};
+  draw();new ResizeObserver(draw).observe(box);
+})();
+
+/* 5. LendSwift collections by vintage (2024-01 .. 2026-10) */
+(function(){
+  const vals=[141.9,133.8,128.7,115.2,127.2,130.4,122.9,128.0,133.1,126.8,126.5,132.2,133.2,140.5,131.5,122.1,123.5,120.6,121.6,123.7,129.0,134.7,131.0,133.6,142.0,138.7,124.3,119.0,112.4,111.4,105.2,87.7,59.0,20.1];
+  const cats=[];for(let y=2024,mo=1;cats.length<vals.length;){cats.push(`${y}-${String(mo).padStart(2,'0')}`);mo++;if(mo>12){mo=1;y++}}
+  const seasoning=i=>i>=vals.length-4;
+  vbar('ch-vint',{cats,series:[{n:'Collected',v:vals,c:'var(--s1)',cf:i=>seasoning(i)?'var(--s1-light)':'var(--s1)'}],yFmt:v=>v.toFixed(0)+'%',tipFmt:v=>v.toFixed(1)+'% of loan amount',ref:100,refLabel:'100% = cash back',labelEvery:6,barFrac:0.78,h:240,catFmt:c=>c.replace('20','’').replace('-','/'),tipExtra:i=>seasoning(i)?'<br>Still collecting':'',label:'LendSwift collections by vintage'});
+  legend('lg-vint',[{n:'Seasoned vintage',c:'var(--s1)'},{n:'Still collecting (≤3 months)',c:'var(--s1-light)'},{n:'100% of loan amount',c:'var(--ink-2)',dash:true}]);
+})();
+
+/* 6. Loss ladder */
+(function(){
+  const box=document.getElementById('ch-ladder');
+  const layers=[{n:'Absorbed by pool income',a:0,b:7.83,c:'var(--s3)'},{n:'Absorbed by sUSD3',a:7.83,b:16.32,c:'var(--s4)'},{n:'Hits USD3 principal',a:16.32,b:24,c:'var(--s2)'}];
+  const sc=[['Base',1.9],['Soft',3.7],['Stress',9.4],['Severe',15.5],['Tail',19.5]];
+  legend('lg-ladder',layers.map(l=>({n:l.n,c:l.c})));
+  const draw=()=>{box.querySelectorAll('svg').forEach(s=>s.remove());const W=Math.max(280,box.clientWidth),H=104,m={l:8,r:14,t:44,b:24};const iw=W-m.l-m.r;const x=v=>m.l+(v/24)*iw;
+    const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':'Loss ladder'},box);const tip=tipFor(box);
+    layers.forEach((l,i)=>{const r=el('rect',{x:x(l.a)+(i?1:0),y:m.t,width:x(l.b)-x(l.a)-(i?1:0)-(i<2?1:0),height:36,rx:i===0||i===2?3:0,style:`fill:${l.c};fill-opacity:.85`},svg);r.addEventListener('mouseenter',()=>tip.show(`<b>${l.n}</b><br>$${l.a.toFixed(1)}M – $${l.b===24?'…':l.b.toFixed(1)+'M'}`,(x(l.a)+x(l.b))/2,m.t));r.addEventListener('mouseleave',()=>tip.hide())});
+    [0,4,8,12,16,20,24].forEach(v=>{const t=el('text',{x:x(v),y:m.t+36+18,'text-anchor':v===0?'start':v===24?'end':'middle',style:'fill:var(--ink-3);font:11px var(--f-mono)'},svg);t.textContent='$'+v+'M'});
+    sc.forEach((s,i)=>{const xx=x(s[1]);el('line',{x1:xx,x2:xx,y1:m.t-4,y2:m.t+36,style:'stroke:var(--ink);stroke-width:2'},svg);el('circle',{cx:xx,cy:m.t-4,r:4,style:'fill:var(--ink);stroke:var(--surface);stroke-width:2'},svg);const row=i%2?0:1;const t=el('text',{x:xx,y:m.t-12-row*14,'text-anchor':i===sc.length-1?'end':'middle',style:'fill:var(--ink);font:600 11.5px var(--f-body)'},svg);t.textContent=s[0];
+      const hit=el('rect',{x:xx-8,y:0,width:16,height:m.t+36,style:'fill:transparent'},svg);hit.addEventListener('mouseenter',()=>tip.show(`<b>${s[0]}</b><br>$${s[1]}M of 12‑month losses`,xx,m.t-8));hit.addEventListener('mouseleave',()=>tip.hide())})};
+  draw();new ResizeObserver(draw).observe(box);
+})();
+
+/* 7. Liquidity ladder */
+vbar('ch-liq',{cats:['Today','30 days','60 days','90 days','180 days'],series:[{n:'Cash (Aave + bank)',v:[15.3,15.3,15.3,15.3,15.3],c:'var(--s3)'},{n:'Slope repaid',v:[0,26.6,45.3,56.6,62.7],c:'var(--s1)'},{n:'Settle repaid',v:[0,7.2,14.9,20.8,28.1],c:'var(--s2)'}],stacked:true,yMax:120,ref:115,refLabel:'TVL $115M',refLeft:true,yFmt:v=>'$'+v.toFixed(0),tipFmt:v=>'$'+v.toFixed(1)+'M',h:250,barFrac:0.55,topLabel:{val:i=>[15.3,49.2,75.6,92.7,106.1][i],txt:i=>['13%','43%','66%','80%','92%'][i]},label:'Liquidity ladder'});
+legend('lg-liq',[{n:'Cash (Aave + Erebor)',c:'var(--s3)'},{n:'Slope principal repaid',c:'var(--s1)'},{n:'Settle principal repaid',c:'var(--s2)'},{n:'TVL',c:'var(--ink-2)',dash:true}]);
+
+/* 8. LCC calculator */
+(function(){
+  const $=id=>document.getElementById(id);let L=6.25;
+  const money=v=>(v<0?'−$':'$')+Math.abs(Math.round(v)).toLocaleString('en-US');
+  const pct=v=>(v*100).toFixed(1)+'%';
+  function calc(){
+    const P=Math.max(25000,+$('in-promise').value||0),f=+$('in-called').value/100,y=+$('in-usd3').value/100,b=+$('in-borrow').value/100,a=+$('in-aave').value/100,j=+$('in-jane').value/100;
+    const m=0.075,fee=0.0125,bonus=0.0075*35/365;
+    const called=f*P,unc=P-called;
+    const feeInc=fee*unc+bonus*called,carry=y*called-(L>1?b*called*(1-1/L):0);
+    const inc=feeInc+carry+a*m*unc+j*m*unc;
+    const dep=m*unc+called/L;const ready=Math.max(dep,L>1?P/L:P);
+    const allin=(inc+a*(ready-dep))/ready;
+    $('o-promise').textContent=money(P);$('o-called').textContent=Math.round(f*100)+'%';$('o-usd3').textContent=pct(y);$('o-borrow').textContent=pct(b);$('o-aave').textContent=pct(a);$('o-jane').textContent=pct(j);
+    $('r-allin').textContent=pct(allin);$('r-income').textContent=money(inc)+' / yr';$('r-dep').textContent=money(dep);$('r-ondep').textContent=pct(inc/dep);$('r-ready').textContent=money(ready);$('r-fee').textContent=money(feeInc);$('r-carry').textContent=money(carry);
+    $('r-hurdles').innerHTML=[12,15,20].map(h=>`<span class="chip ${allin*100>=h?'good':'bad'}">${allin*100>=h?'Clears':'Below'} ${h}%</span>`).join('');
+  }
+  ['in-promise','in-called','in-usd3','in-borrow','in-aave','in-jane'].forEach(id=>$(id).addEventListener('input',calc));
+  $('b-spot').addEventListener('click',()=>{L=1;$('b-spot').setAttribute('aria-pressed','true');$('b-loop').setAttribute('aria-pressed','false');calc()});
+  $('b-loop').addEventListener('click',()=>{L=6.25;$('b-loop').setAttribute('aria-pressed','true');$('b-spot').setAttribute('aria-pressed','false');calc()});
+  calc();
+})();
+
+/* Copy questions */
+document.getElementById('copyq').addEventListener('click',e=>{const items=[...document.querySelectorAll('#qlist li')].map((li,i)=>`${i+1}. ${li.childNodes[0].textContent.trim()}`).join('\n');const btn=e.currentTarget;navigator.clipboard.writeText(items).then(()=>{btn.textContent='Copied'},()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('qlist'));const s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Selected, press copy'}).finally(()=>setTimeout(()=>btn.textContent='Copy questions',2000))});
+})();
+</script>
