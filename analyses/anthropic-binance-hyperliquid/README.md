@@ -3,7 +3,7 @@
 Per-share price gap between Binance `ANTHROPICUSDT` and trade.xyz `xyz:ANT` on Hyperliquid, from Mon 2 Nov 2026 00:00 UTC.
 Trade opened 8 Nov 2026 01:26:44 (read as UTC).
 
-- Chart: https://claude.ai/artifact/GeAsBdNasMvoJm2tMR4jtv
+- Chart (Notion embed): https://claude.ai/artifact/5mtjwJ1LS2dGFLG9zBf6pK, source `charts/anthropic-spread.html`, PNG fallback `charts/anthropic-spread.png`.
 - `anthropic_prices.csv`: every close behind the chart (5-minute closes, the 1-minute entry candle, live Binance quotes), with the source of each.
 - `spread.py`: rebuilds the CSV and prints the summary.
 
