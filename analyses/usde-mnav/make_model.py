@@ -1,231 +1,144 @@
-"""Builds usde_mnav_model.xlsx: inputs, balance sheet, mNAV history and scenarios (all formulas)."""
-import csv, json
+"""Simple USDE mNAV scenario model: inputs, a step-by-step scenario table and an ENA move x exit mNAV grid.
+All cells are formulas off the Inputs block, so changing an input updates everything."""
 from pathlib import Path
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from openpyxl.comments import Comment
-from openpyxl.chart import LineChart, Reference
+from openpyxl.formatting.rule import CellIsRule
 
 HERE = Path(__file__).parent
-N = json.load(open(HERE / "numbers.json"))
-Q3 = "https://www.sec.gov/Archives/edgar/data/2080215/000121390026120186/ea031225601ex99-1.htm"
-WAIVER = "https://www.sec.gov/Archives/edgar/data/2080215/000121390026100751/ea030568601ex10-1.htm"
-
 F = "Arial"
-BLUE, BLACK, GREEN = Font(name=F, color="0000FF"), Font(name=F), Font(name=F, color="008000")
+BLUE = Font(name=F, color="0000FF")
+BLACK = Font(name=F)
 BOLD = Font(name=F, bold=True)
 H1 = Font(name=F, bold=True, size=14)
+H2 = Font(name=F, bold=True, size=12)
 NOTE = Font(name=F, italic=True, color="666666", size=9)
-YELLOW = PatternFill("solid", fgColor="FFFF00")
 HEAD = PatternFill("solid", fgColor="E8E8E4")
+YELLOW = PatternFill("solid", fgColor="FFFF00")
+GREEN_F = PatternFill("solid", fgColor="D9F2E3")
+RED_F = PatternFill("solid", fgColor="F9DEDC")
 thin = Side(style="thin", color="BBBBBB")
-TOP = Border(top=thin)
-USD = '$#,##0;($#,##0);"-"'
-USD2 = '$#,##0.00;($#,##0.00);"-"'
+BOX = Border(left=thin, right=thin, top=thin, bottom=thin)
+USD = '$#,##0;-$#,##0;$0'
+USD2 = '$0.00'
 USD4 = '$0.0000'
-PCT = '0.0%;(0.0%);"-"'
+PCT = '+0%;-0%;0%'
+PCT1 = '+0.0%;-0.0%;0.0%'
 MULT = '0.00"x"'
 NUM = '#,##0'
 
 wb = Workbook()
-
-# ---------------- Inputs ----------------
 ws = wb.active
-ws.title = "Inputs"
-ws.column_dimensions["A"].width = 46
-ws.column_dimensions["B"].width = 18
-ws.column_dimensions["C"].width = 70
-ws["A1"] = "USDE mNAV trade: inputs"; ws["A1"].font = H1
-ws["A2"] = "Blue = input you can change. Black = formula. Yellow = key assumption. Green = link to another sheet."; ws["A2"].font = NOTE
+ws.title = "Model"
+ws.column_dimensions["A"].width = 34
+for c in "BCDEFGHIJKL":
+    ws.column_dimensions[c].width = 14
 
-def row(r, label, val, fmt, font=BLACK, note="", fill=None):
-    ws.cell(r, 1, label).font = Font(name=F)
-    c = ws.cell(r, 2, val); c.number_format = fmt; c.font = font
-    if fill: c.fill = fill
-    if note: ws.cell(r, 3, note).font = NOTE
-    return c
+ws["A1"] = "USDE mNAV trade: scenarios"; ws["A1"].font = H1
+ws["A2"] = "Blue cells are inputs. Everything else is a formula. Long USDE and short ENA, same dollar amount, no rebalancing, before fees and funding."
+ws["A2"].font = NOTE
 
-ws["A4"] = "Market (as of " + N["asof"] + (", intraday" if N["intraday"] else "") + ")"; ws["A4"].font = BOLD
-row(5, "USDE share price ($)", round(N["usde"], 4), USD2, BLUE, "Nasdaq: USDE, Yahoo Finance. Update before the IC.", YELLOW)
-row(6, "ENA price ($)", N["ena"], USD4, BLUE, "Hyperliquid ENA perp, " + N["ena_time_utc"] + " UTC. Update before the IC.", YELLOW)
-
-ws["A8"] = "Company (Q3 2026 results, 8-K filed 16 Nov 2026)"; ws["A8"].font = BOLD
-row(9, "Class A shares outstanding", N["shares"], NUM, BLUE, "Q3 8-K: 24,029,576 Class A shares. Class B (3.16M) has votes but no economics.")
-row(10, "ENA held (tokens)", N["ena_held"], NUM, BLUE, "Q2 10-Q Note 3: 284,954,407 (Ethena) + 1,405,754,436 (PIPE) + 1,340,695,578 (additional PIPE). Q3 8-K values reconcile within 0.1%.")
-row(11, "Cash ($)", N["cash"], USD, BLUE, "Balance sheet, 30 Sep 2026")
-row(12, "Other assets ($)", N["other_assets"], USD, BLUE, "Other current assets $2.42M + intangibles $0.69M, 30 Sep 2026")
-row(13, "Current liabilities ($)", N["cur_liab"], USD, BLUE, "Balance sheet, 30 Sep 2026. Warrant liability ($109.6M) excluded: settled in shares, not cash.")
-
-ws["A15"] = "Derived"; ws["A15"].font = BOLD
-row(16, "Market cap ($)", "=B5*B9", USD)
-row(17, "ENA value at market ($)", "=B10*B6", USD)
-row(18, "Net asset value, ENA at market ($)", "=B17+B11+B12-B13", USD)
-row(19, "ENA per share", "=B10/B9", '#,##0.0')
-row(20, "ENA value per share ($)", "=B17/B9", USD2)
-row(21, "NAV per share ($)", "=B18/B9", USD2)
-c = row(22, "mNAV today (market cap ÷ ENA value)", "=B16/B17", MULT, note="The number we trade. Entry mNAV for the scenarios."); c.font = BOLD; c.fill = YELLOW
-row(23, "Price ÷ NAV per share (incl. cash and liabilities)", "=B5/B21", MULT, note="Close to mNAV because cash and liabilities are small.")
-
-ws["A25"] = "Trade"; ws["A25"].font = BOLD
-row(26, "Long USDE on Interactive Brokers ($)", N["long"], USD, BLUE, "Same dollar amount on both legs, not 126 ENA per share.", YELLOW)
-row(36, "USDE shares bought", "=B26/B5", NUM)
-row(37, "USDE avg daily volume, last 20 days (shares)", N["adv20_shares"], NUM, BLUE, "Yahoo Finance daily volume")
-row(38, "Long as % of one day's volume", "=B36/B37", PCT, note="Buying at ~10% of daily volume takes this ÷ 10% days, same to exit")
-row(39, "ENA shorted (tokens)", "=B27/B6", NUM, note="Equal dollars. Not the ENA behind the shares (=B36*B19)")
-row(27, "Short ENA perp on Hyperliquid ($)", N["short"], USD, BLUE, "", YELLOW)
-row(28, "Hyperliquid leverage (x)", N["hl_lev"], '0.0"x"', BLUE, "At 5x the margin is 20% of the short. ENA did +24% in one day (21 Aug, +35% intraday) and +73% in 3 days: keep extra collateral ready.")
-row(29, "Capital needed ($)", "=B26+B27/B28", USD, note="Long fully paid on IBKR + Hyperliquid margin")
-row(30, "ENA funding, annualized (short earns if positive)", round(N["funding_ann_since_listing"], 4), PCT, BLUE,
-    f"Avg since listing {N['funding_ann_since_listing']:.1%}; last 30 days {N['funding_ann_30d']:.1%}. Can go negative.", YELLOW)
-row(31, "Holding period (days)", 180, NUM, BLUE)
-row(32, "USDE trading cost, round trip (% of long)", 0.01, PCT, BLUE, "Assumption: spread + impact on a thin stock. ~1.0M shares/day.")
-row(33, "Hyperliquid fees, round trip (% of short)", 0.0009, '0.00%', BLUE, "Assumption: 0.045% taker per side.")
-row(34, "Funding earned over the holding period ($)", "=B27*B30*B31/365", USD)
-row(35, "Trading costs ($)", "=B26*B32+B27*B33", USD)
-
-# ---------------- Balance sheet ----------------
-bs = wb.create_sheet("Balance sheet")
-bs.column_dimensions["A"].width = 48
-for col in "BCD":
-    bs.column_dimensions[col].width = 20
-bs["A1"] = "StablecoinX balance sheet: book vs market"; bs["A1"].font = H1
-bs["A2"] = "Book = 30 Sep 2026 balance sheet (Q3 results). Market = ENA marked at today's price (Inputs!B6)."; bs["A2"].font = NOTE
-bs["A3"] = "Source: " + Q3; bs["A3"].font = NOTE
-bs["A3"].hyperlink = Q3
-for j, h in enumerate(["", "Book, 30 Sep ($)", "At market today ($)", "Note"], 1):
-    c = bs.cell(5, j, h); c.font = BOLD; c.fill = HEAD
-lines = [
-    ("ENA tokens", 212_751_644, "=Inputs!B17", "Book is cost less impairment, not market value"),
-    ("Cash", 10_352_692, "=Inputs!B11", ""),
-    ("Other assets", 3_108_115, "=Inputs!B12", "Prepaids, receivables, small digital assets, intangibles"),
+# ---------- Inputs ----------
+ws["A4"] = "Inputs"; ws["A4"].font = H2
+inputs = [
+    ("Class A shares", 24_029_576, NUM, "Q3 2026 results (8-K, 16 Nov 2026)"),
+    ("ENA held", 3_031_404_421, NUM, "Q2 10-Q, Note 3: 284,954,407 + 1,405,754,436 + 1,340,695,578"),
+    ("ENA price ($)", 0.1169, USD4, "Hyperliquid, 16 Nov 2026"),
+    ("USDE price ($)", 4.35, USD2, "Nasdaq, 16 Nov 2026"),
+    ("Long USDE ($)", 1_000_000, USD, "Interactive Brokers"),
+    ("Short ENA ($)", 1_000_000, USD, "Hyperliquid perp"),
 ]
-r = 6
-for lab, book, mkt, note in lines:
-    bs.cell(r, 1, lab).font = Font(name=F)
-    bs.cell(r, 2, book).font = BLUE
-    bs.cell(r, 3, mkt).font = GREEN
-    bs.cell(r, 4, note).font = NOTE
-    r += 1
-bs.cell(r, 1, "Total assets").font = BOLD
-bs.cell(r, 2, "=SUM(B6:B8)"); bs.cell(r, 3, "=SUM(C6:C8)")
-r += 1  # 10
-bs.cell(r, 1, "Current liabilities").font = Font(name=F); bs.cell(r, 2, 1_983_077).font = BLUE; bs.cell(r, 3, "=Inputs!B13").font = GREEN
-r += 1  # 11
-bs.cell(r, 1, "Warrant liabilities").font = Font(name=F); bs.cell(r, 2, 109_550_592).font = BLUE; bs.cell(r, 3, 0).font = BLUE
-bs.cell(r, 4, "Excluded at market: non-cash, settled in shares. 11.5M public warrants at $11.50 (10-Q) + sponsor warrants (~7.6M at $11.50/$15 per Starkiller, unverified). Out of the money").font = NOTE
-r += 1  # 12
-bs.cell(r, 1, "Total liabilities").font = BOLD; bs.cell(r, 2, "=B10+B11"); bs.cell(r, 3, "=C10+C11")
-r += 1  # 13
-bs.cell(r, 1, "Equity (NAV)").font = BOLD; bs.cell(r, 2, "=B9-B12"); bs.cell(r, 3, "=C9-C12")
-bs.cell(r, 4, "Book equity per the filing: $114,678,782").font = NOTE
-r += 1  # 14
-bs.cell(r, 1, "Class A shares").font = Font(name=F); bs.cell(r, 2, "=Inputs!B9").font = GREEN; bs.cell(r, 3, "=Inputs!B9").font = GREEN
-r += 1  # 15
-bs.cell(r, 1, "NAV per share ($)").font = BOLD; bs.cell(r, 2, "=B13/B14"); bs.cell(r, 3, "=C13/C14")
-r += 1  # 16
-bs.cell(r, 1, "USDE share price ($)").font = Font(name=F); bs.cell(r, 3, "=Inputs!B5").font = GREEN
-r += 1  # 17
-bs.cell(r, 1, "Price ÷ NAV per share").font = BOLD; bs.cell(r, 3, "=C16/C15")
-for rr in range(6, 15):
-    for cc in (2, 3):
-        bs.cell(rr, cc).number_format = USD
-bs["B14"].number_format = NUM; bs["C14"].number_format = NUM
-for cc in (2, 3):
-    bs.cell(15, cc).number_format = USD2
-bs["C16"].number_format = USD2; bs["C17"].number_format = MULT
-for rr in (9, 12, 13):
-    for cc in (1, 2, 3):
-        bs.cell(rr, cc).border = TOP
-bs["A19"] = "Proof the ENA can be sold to buy back stock: Waiver Letter (Exhibit 10.1, 8-K of 17 Sep 2026), clauses 1.1 and 5."; bs["A19"].font = NOTE
-bs["A20"] = WAIVER; bs["A20"].hyperlink = WAIVER; bs["A20"].font = NOTE
+for i, (lab, v, fmt, src) in enumerate(inputs, 5):
+    ws.cell(i, 1, lab).font = BLACK
+    c = ws.cell(i, 2, v); c.font = BLUE; c.number_format = fmt; c.fill = YELLOW; c.border = BOX
+    ws.cell(i, 3, src).font = NOTE
+# B5 shares, B6 ENA held, B7 ENA price, B8 USDE price, B9 long, B10 short
 
-# ---------------- History ----------------
-hs = wb.create_sheet("History")
-cols = ["Date", "USDE close ($)", "ENA price ($)", "Market cap ($)", "ENA value ($)", "mNAV"]
-for j, h in enumerate(cols, 1):
-    c = hs.cell(1, j, h); c.font = BOLD; c.fill = HEAD
-    hs.column_dimensions["ABCDEF"[j - 1]].width = 16
-rows = list(csv.DictReader(open(HERE / "usde_mnav_daily.csv")))
-for i, rw in enumerate(rows, 2):
-    hs.cell(i, 1, rw["date"]).font = BLUE
-    hs.cell(i, 2, float(rw["usde_close"])).font = BLUE
-    hs.cell(i, 3, float(rw["ena_price_at_nasdaq_close"])).font = BLUE
-    hs.cell(i, 4, f"=B{i}*Inputs!$B$9"); hs.cell(i, 5, f"=C{i}*Inputs!$B$10"); hs.cell(i, 6, f"=D{i}/E{i}")
-    hs.cell(i, 2).number_format = USD2; hs.cell(i, 3).number_format = USD4
-    hs.cell(i, 4).number_format = USD; hs.cell(i, 5).number_format = USD; hs.cell(i, 6).number_format = '0.000"x"'
-last = len(rows) + 1
-hs.cell(last, 7, "intraday" if N["intraday"] else "").font = NOTE
-hs["H1"] = "Stats"; hs["H1"].font = BOLD
-stats = [("Max", f"=MAX(F2:F{last})"), ("Date of max", f"=INDEX(A2:A{last},MATCH(I2,F2:F{last},0))"),
-         ("Average", f"=AVERAGE(F2:F{last})"), ("Median", f"=MEDIAN(F2:F{last})"),
-         ("Min", f"=MIN(F2:F{last})"), ("Date of min", f"=INDEX(A2:A{last},MATCH(I6,F2:F{last},0))"),
-         ("Latest", f"=F{last}"), ("Days", f"=COUNT(F2:F{last})")]
-for k, (lab, fml) in enumerate(stats, 2):
-    hs.cell(k, 8, lab).font = Font(name=F); c = hs.cell(k, 9, fml)
-    c.number_format = '0.000"x"' if lab in ("Max", "Average", "Median", "Min", "Latest") else "@" if "Date" in lab else NUM
-hs.column_dimensions["H"].width = 14; hs.column_dimensions["I"].width = 14
-hs["H11"] = "mNAV = (USDE close × Class A shares) ÷ (ENA held × ENA price). ENA price = Hyperliquid ENA perp at the 4pm New York close."; hs["H11"].font = NOTE
-ch = LineChart(); ch.title = "USDE mNAV since listing"; ch.height = 8; ch.width = 18
-ch.add_data(Reference(hs, min_col=6, min_row=1, max_row=last), titles_from_data=True)
-ch.set_categories(Reference(hs, min_col=1, min_row=2, max_row=last))
-ch.y_axis.number_format = '0.0"x"'; ch.roundedCorners = False; ch.legend = None
-ch.x_axis.delete = False; ch.y_axis.delete = False
-hs.add_chart(ch, "H13")
+ws["A12"] = "Today"; ws["A12"].font = H2
+derived = [
+    ("ENA per share", "=B6/B5", '#,##0.0'),
+    ("ENA value per share ($)", "=B13*B7", USD2),
+    ("Market cap ($)", "=B8*B5", USD),
+    ("ENA value ($)", "=B6*B7", USD),
+    ("mNAV = market cap ÷ ENA value", "=B15/B16", MULT),
+    ("Discount", "=1-B17", '0%'),
+    ("USDE shares we buy", "=B9/B8", NUM),
+    ("ENA we short", "=B10/B7", NUM),
+]
+for i, (lab, f, fmt) in enumerate(derived, 13):
+    ws.cell(i, 1, lab).font = BLACK
+    c = ws.cell(i, 2, f); c.number_format = fmt
+ws["B17"].font = BOLD
+# B13 ENA/share, B14 ENA value/share, B15 mcap, B16 ENA value, B17 mNAV, B18 discount, B19 shares, B20 ENA shorted
 
-# ---------------- Scenarios ----------------
-sc = wb.create_sheet("Scenarios")
-sc.column_dimensions["A"].width = 30
-for col in "BCDEFGHIJ":
-    sc.column_dimensions[col].width = 15
-sc["A1"] = "USDE mNAV trade: scenarios"; sc["A1"].font = H1
-sc["A2"] = "Long USDE, short ENA, equal dollars. Entry = today's mNAV. Exit levels from the history since listing."; sc["A2"].font = NOTE
-sc["A4"] = "Entry mNAV"; sc["B4"] = "=Inputs!B22"; sc["B4"].font = GREEN; sc["B4"].number_format = MULT
-sc["A5"] = "ENA price move to exit"; sc["B5"] = 0; sc["B5"].font = BLUE; sc["B5"].fill = YELLOW; sc["B5"].number_format = PCT
-sc["C5"] = "0% = ENA flat. Try −50% or +100%: the hedge holds, the result scales by (1 + move)."; sc["C5"].font = NOTE
-hdr = ["Scenario", "Exit mNAV", "Return on long", "Long P&L ($)", "Short P&L ($)", "Funding ($)", "Costs ($)", "Net P&L ($)", "Return on capital"]
+# ---------- Scenario table ----------
+r0 = 23
+ws.cell(r0 - 1, 1, "Scenarios, step by step").font = H2
+hdr = ["Scenario", "ENA move", "Exit mNAV", "New ENA price", "New USDE price", "Long P&L", "Short P&L", "Net P&L", "Net % of long"]
 for j, h in enumerate(hdr, 1):
-    c = sc.cell(7, j, h); c.font = BOLD; c.fill = HEAD; c.alignment = Alignment(wrap_text=True)
-scen = [("Historical max", "=History!I2"), ("Historical average", "=History!I4"), ("Today (no change)", "=B4"),
-        ("Historical min", "=History!I6"), ("Half the historical min", "=History!I6/2"), ("Zero", 0),
-        ("Custom (type an mNAV)", 0.45)]
-for k, (lab, m) in enumerate(scen, 8):
-    sc.cell(k, 1, lab).font = Font(name=F)
-    c = sc.cell(k, 2, m); c.number_format = MULT
-    c.font = BLUE if isinstance(m, (int, float)) else GREEN
-    if lab.startswith("Custom"):
-        c.fill = YELLOW
-    sc.cell(k, 3, f"=(1+$B$5)*B{k}/$B$4-1").number_format = PCT
-    sc.cell(k, 4, f"=Inputs!$B$26*C{k}").number_format = USD
-    sc.cell(k, 5, f"=-Inputs!$B$27*$B$5").number_format = USD
-    sc.cell(k, 6, "=Inputs!$B$34").number_format = USD
-    sc.cell(k, 7, "=-Inputs!$B$35").number_format = USD
-    sc.cell(k, 8, f"=SUM(D{k}:G{k})").number_format = USD
-    sc.cell(k, 9, f"=H{k}/Inputs!$B$29").number_format = PCT
-    sc.cell(k, 8).font = BOLD
-sc["A16"] = "Long P&L = long × [(1 + ENA move) × exit mNAV ÷ entry mNAV − 1]. Short P&L = −short × ENA move. Funding = short × rate × days ÷ 365."; sc["A16"].font = NOTE
-sc["A17"] = "Return on capital uses Inputs!B29 (long fully paid + Hyperliquid margin). Funding and costs use the holding period in Inputs."; sc["A17"].font = NOTE
+    c = ws.cell(r0, j, h); c.font = BOLD; c.fill = HEAD; c.alignment = Alignment(wrap_text=True, vertical="center"); c.border = BOX
+ws.row_dimensions[r0].height = 30
+scen = [
+    ("Nothing moves", 0, "=$B$17"),
+    ("ENA +50%, mNAV flat", 0.5, "=$B$17"),
+    ("ENA −50%, mNAV flat", -0.5, "=$B$17"),
+    ("ENA flat, mNAV up to 0.40x", 0, 0.40),
+    ("ENA flat, mNAV down to 0.20x", 0, 0.20),
+    ("ENA +50%, mNAV up to 0.40x", 0.5, 0.40),
+    ("ENA −50%, mNAV up to 0.40x", -0.5, 0.40),
+    ("ENA +50%, mNAV down to 0.20x", 0.5, 0.20),
+    ("ENA −50%, mNAV down to 0.20x", -0.5, 0.20),
+    ("ENA flat, back to waiver day (0.48x)", 0, 0.48),
+    ("ENA flat, historical max (0.52x)", 0, 0.52),
+    ("ENA flat, historical min (0.13x)", 0, 0.13),
+    ("ENA flat, mNAV to zero", 0, 0),
+]
+for k, (lab, mv, m) in enumerate(scen, r0 + 1):
+    ws.cell(k, 1, lab).font = BLACK
+    c = ws.cell(k, 2, mv); c.font = BLUE; c.number_format = PCT
+    c = ws.cell(k, 3, m); c.number_format = MULT; c.font = BLACK if isinstance(m, str) else BLUE
+    ws.cell(k, 4, f"=$B$7*(1+B{k})").number_format = USD4
+    ws.cell(k, 5, f"=D{k}*$B$13*C{k}").number_format = USD2
+    ws.cell(k, 6, f"=$B$19*E{k}-$B$9").number_format = USD
+    ws.cell(k, 7, f"=-$B$20*(D{k}-$B$7)").number_format = USD
+    c = ws.cell(k, 8, f"=F{k}+G{k}"); c.number_format = USD; c.font = BOLD
+    ws.cell(k, 9, f"=H{k}/$B$9").number_format = PCT1
+    for j in range(1, 10):
+        ws.cell(k, j).border = BOX
+r_end = r0 + len(scen)
+ws.cell(r_end + 1, 1, "New USDE price = new ENA price × ENA per share × exit mNAV. Long P&L = shares × new price − long. Short P&L = −ENA shorted × change in ENA price.").font = NOTE
+ws.cell(r_end + 2, 1, "Blue cells in the table (ENA move, exit mNAV) can be changed to test any scenario.").font = NOTE
 
-sc["A19"] = "Net P&L ($) by exit mNAV (rows) and ENA move (columns)"; sc["A19"].font = BOLD
+# ---------- Grid ----------
+g0 = r_end + 5
+ws.cell(g0 - 1, 1, "Net P&L ($): exit mNAV (rows) × ENA move (columns)").font = H2
 moves = [-0.5, -0.25, 0, 0.25, 0.5, 1.0]
-mn = [0.065, 0.13, 0.2, 0.25, 0.3, 0.33, 0.4, 0.5, 0.6, 0.7, 1.0]
-sc.cell(20, 1, "Exit mNAV ↓ / ENA move →").font = BOLD
-for j, mv in enumerate(moves, 2):
-    c = sc.cell(20, j, mv); c.number_format = '+0%;-0%;0%'; c.font = BLUE; c.fill = HEAD
-for i, m in enumerate(mn, 21):
-    c = sc.cell(i, 1, m); c.number_format = MULT; c.font = BLUE
-    for j in range(2, 2 + len(moves)):
-        col = "ABCDEFGHIJ"[j - 1]
-        f = (f"=Inputs!$B$26*((1+{col}$20)*$A{i}/$B$4-1)-Inputs!$B$27*{col}$20+Inputs!$B$34-Inputs!$B$35")
-        sc.cell(i, j, f).number_format = USD
-sc["A33"] = "Includes funding and costs from Inputs. Hyperliquid margin on big ENA up-moves is not modelled: move collateral or keep leverage low."; sc["A33"].font = NOTE
-sc.freeze_panes = "A8"
+levels = [("Zero", 0), ("Half the min", 0.065), ("Historical min", 0.13), ("", 0.20), ("", 0.25), ("Today", "=$B$17"),
+          ("Average", 0.33), ("", 0.40), ("Waiver day", 0.48), ("Historical max", 0.52), ("", 0.70), ("Parity", 1.0)]
+c = ws.cell(g0, 1, "Exit mNAV ↓   ENA move →"); c.font = BOLD; c.fill = HEAD; c.border = BOX
+c = ws.cell(g0, 2, ""); c.fill = HEAD; c.border = BOX
+for j, mv in enumerate(moves, 3):
+    c = ws.cell(g0, j, mv); c.font = Font(name=F, bold=True, color="0000FF"); c.fill = HEAD; c.number_format = PCT; c.border = BOX
+    c.alignment = Alignment(horizontal="center")
+for i, (lab, m) in enumerate(levels, g0 + 1):
+    ws.cell(i, 1, lab).font = BLACK
+    c = ws.cell(i, 2, m); c.number_format = MULT; c.font = BLACK if isinstance(m, str) else BLUE
+    if lab == "Today":
+        ws.cell(i, 1).font = BOLD; c.font = BOLD
+    for j in range(3, 3 + len(moves)):
+        col = "ABCDEFGHIJKL"[j - 1]
+        f = f"=$B$19*($B$7*(1+{col}${g0})*$B$13*$B{i})-$B$9-$B$20*($B$7*{col}${g0})"
+        cc = ws.cell(i, j, f); cc.number_format = USD; cc.border = BOX
+    ws.cell(i, 1).border = BOX; ws.cell(i, 2).border = BOX
+g_end = g0 + len(levels)
+rng = f"C{g0+1}:H{g_end}"
+ws.conditional_formatting.add(rng, CellIsRule(operator="greaterThan", formula=["0.5"], fill=GREEN_F))
+ws.conditional_formatting.add(rng, CellIsRule(operator="lessThan", formula=["-0.5"], fill=RED_F))
+ws.conditional_formatting.add(f"H{r0+1}:H{r_end}", CellIsRule(operator="greaterThan", formula=["0.5"], fill=GREEN_F))
+ws.conditional_formatting.add(f"H{r0+1}:H{r_end}", CellIsRule(operator="lessThan", formula=["-0.5"], fill=RED_F))
+ws.cell(g_end + 1, 1, "Read it like this: the row (mNAV) decides if we win or lose. The column (ENA) only makes the result bigger or smaller.").font = NOTE
+ws.cell(g_end + 2, 1, "Same formula as the table: Net = long × [(1 + ENA move) × exit mNAV ÷ today's mNAV − 1] − short × ENA move.").font = NOTE
 
-for s in wb.worksheets:
-    for r_ in s.iter_rows():
-        for c in r_:
-            if c.font and c.font.name != F:
-                c.font = Font(name=F, bold=c.font.bold, italic=c.font.italic, color=c.font.color, size=c.font.size)
-wb.move_sheet("Scenarios", offset=-2)
-wb.active = 0
+ws.freeze_panes = "A4"
 wb.save(HERE / "usde_mnav_model.xlsx")
-print("saved")
+print("saved", g0, g_end)
