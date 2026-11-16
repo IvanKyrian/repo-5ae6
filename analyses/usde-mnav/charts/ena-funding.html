@@ -1,0 +1,441 @@
+<title>ENA Funding Hyperliquid</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one compact chart card sized for a Notion embed; header, legend row, plot, table toggle. */
+:root {
+  --bg: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --band: rgba(11, 11, 11, 0.055); --line: rgba(11, 11, 11, 0.10);
+  --s-bin: #2a78d6; --s-hl: #eb6834; --pos: #1baf7a; --neg: #e34948; --s-strat: #2a78d6;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --band: rgba(255, 255, 255, 0.06); --line: rgba(255, 255, 255, 0.10);
+    --s-bin: #3987e5; --s-hl: #d95926; --pos: #199e70; --neg: #e66767; --s-strat: #3987e5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --band: rgba(255, 255, 255, 0.06); --line: rgba(255, 255, 255, 0.10);
+  --s-bin: #3987e5; --s-hl: #d95926; --pos: #199e70; --neg: #e66767; --s-strat: #3987e5;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 18px 20px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 14px; }
+h1 { font-size: 17px; font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.005em; }
+.sub { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.45; max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.stat { display: grid; gap: 2px; min-width: 0; }
+.stat span { font-size: 11px; color: var(--muted); letter-spacing: 0.02em; }
+.stat b { font-size: 18px; font-weight: 600; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lk { width: 16px; height: 2px; border-radius: 1px; display: inline-block; }
+.lk.thick { height: 6px; border-radius: 3px; opacity: 0.4; }
+.sq { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; padding: 2px; gap: 2px; }
+.seg button { font: inherit; font-size: 12px; border: 0; background: transparent; color: var(--ink-2); padding: 4px 10px; border-radius: 5px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible, svg:focus-visible, summary:focus-visible { outline: 2px solid var(--s-bin); outline-offset: 2px; }
+.plot { position: relative; min-width: 0; }
+.plot svg { display: block; overflow: visible; touch-action: pan-y; }
+.tick { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.plabel { font-size: 12px; fill: var(--ink-2); font-weight: 500; }
+.note { font-size: 11px; fill: var(--ink-2); }
+.note.strong { fill: var(--ink); font-weight: 600; }
+.tip { position: absolute; pointer-events: none; background: var(--bg); border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+  display: grid; gap: 4px; min-width: 170px; z-index: 2; }
+.tip-date { font-size: 11px; color: var(--muted); }
+.tip-row { display: grid; grid-template-columns: 14px auto 1fr; align-items: center; gap: 6px; }
+.tip-row.sep { border-top: 1px solid var(--line); padding-top: 4px; margin-top: 2px; }
+.tip-row strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip-label { color: var(--ink-2); }
+.key { width: 12px; height: 2px; border-radius: 1px; }
+.key.blank { background: transparent; }
+.foot { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: 0; max-width: 90ch; }
+details { font-size: 12px; color: var(--ink-2); }
+summary { cursor: pointer; width: fit-content; }
+.tablewrap { overflow: auto; max-height: 320px; margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 4px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { position: sticky; top: 0; background: var(--bg); color: var(--ink); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap" id="root">
+<header>
+  <h1>ENA funding on Hyperliquid</h1>
+  <p class="sub">Funding on the ENA perp, annualized. Positive means longs pay shorts, so our short leg earns it. 26 Jun – 15 Nov 2026.</p>
+</header>
+<div class="stats">
+  <div class="stat"><span>Avg since listing</span><b>11.7%</b></div>
+  <div class="stat"><span>Last 30 days</span><b>8.7%</b></div>
+  <div class="stat"><span>Hours positive</span><b>94%</b></div>
+  <div class="stat"><span>Negative days</span><b>4 of 143</b></div>
+</div>
+<div class="bar">
+  <div class="legend">
+    <span><i class="sq" style="background:var(--pos)"></i>Positive, our short earns</span>
+    <span><i class="sq" style="background:var(--neg)"></i>Negative, our short pays</span>
+  </div>
+  <div class="seg" role="group" aria-label="Smoothing">
+    <button type="button" id="m7" aria-pressed="true">7-day avg</button>
+    <button type="button" id="m1" aria-pressed="false">Daily</button>
+  </div>
+</div>
+<div class="plot"><div class="tip" hidden></div></div>
+<p class="foot">Hyperliquid settles funding every hour. Each day sums its 24 settlements, then ×365. Full UTC days only. Source: Hyperliquid API (fundingHistory, ENA).</p>
+<details><summary>Show data table</summary><div class="tablewrap"><table><thead><tr><th>Date</th><th>Funding (ann.)</th><th>7-day avg</th></tr></thead><tbody>
+<tr><td>2026-06-26</td><td>+7.3%</td><td>+7.3%</td></tr>
+<tr><td>2026-06-27</td><td>+10.1%</td><td>+8.7%</td></tr>
+<tr><td>2026-06-28</td><td>-3.9%</td><td>+4.5%</td></tr>
+<tr><td>2026-06-29</td><td>+11.0%</td><td>+6.1%</td></tr>
+<tr><td>2026-06-30</td><td>+3.9%</td><td>+5.7%</td></tr>
+<tr><td>2026-07-01</td><td>+9.7%</td><td>+6.3%</td></tr>
+<tr><td>2026-07-02</td><td>+10.9%</td><td>+7.0%</td></tr>
+<tr><td>2026-07-03</td><td>+11.0%</td><td>+7.5%</td></tr>
+<tr><td>2026-07-04</td><td>+10.7%</td><td>+7.6%</td></tr>
+<tr><td>2026-07-05</td><td>+8.9%</td><td>+9.4%</td></tr>
+<tr><td>2026-07-06</td><td>+9.5%</td><td>+9.2%</td></tr>
+<tr><td>2026-07-07</td><td>+10.7%</td><td>+10.2%</td></tr>
+<tr><td>2026-07-08</td><td>+9.1%</td><td>+10.1%</td></tr>
+<tr><td>2026-07-09</td><td>+11.0%</td><td>+10.1%</td></tr>
+<tr><td>2026-07-10</td><td>+11.0%</td><td>+10.1%</td></tr>
+<tr><td>2026-07-11</td><td>+10.4%</td><td>+10.1%</td></tr>
+<tr><td>2026-07-12</td><td>+11.0%</td><td>+10.4%</td></tr>
+<tr><td>2026-07-13</td><td>+9.7%</td><td>+10.4%</td></tr>
+<tr><td>2026-07-14</td><td>+11.0%</td><td>+10.4%</td></tr>
+<tr><td>2026-07-15</td><td>+11.0%</td><td>+10.7%</td></tr>
+<tr><td>2026-07-16</td><td>+11.0%</td><td>+10.7%</td></tr>
+<tr><td>2026-07-17</td><td>+7.9%</td><td>+10.3%</td></tr>
+<tr><td>2026-07-18</td><td>+10.4%</td><td>+10.3%</td></tr>
+<tr><td>2026-07-19</td><td>+10.0%</td><td>+10.1%</td></tr>
+<tr><td>2026-07-20</td><td>+11.0%</td><td>+10.3%</td></tr>
+<tr><td>2026-07-21</td><td>+11.0%</td><td>+10.3%</td></tr>
+<tr><td>2026-07-22</td><td>+11.0%</td><td>+10.3%</td></tr>
+<tr><td>2026-07-23</td><td>+11.0%</td><td>+10.3%</td></tr>
+<tr><td>2026-07-24</td><td>+10.9%</td><td>+10.7%</td></tr>
+<tr><td>2026-07-25</td><td>+10.6%</td><td>+10.8%</td></tr>
+<tr><td>2026-07-26</td><td>+11.0%</td><td>+10.9%</td></tr>
+<tr><td>2026-07-27</td><td>+9.5%</td><td>+10.7%</td></tr>
+<tr><td>2026-07-28</td><td>+3.2%</td><td>+9.6%</td></tr>
+<tr><td>2026-07-29</td><td>+1.2%</td><td>+8.2%</td></tr>
+<tr><td>2026-07-30</td><td>+10.2%</td><td>+8.1%</td></tr>
+<tr><td>2026-07-31</td><td>+4.0%</td><td>+7.1%</td></tr>
+<tr><td>2026-08-01</td><td>+6.3%</td><td>+6.5%</td></tr>
+<tr><td>2026-08-02</td><td>+6.4%</td><td>+5.8%</td></tr>
+<tr><td>2026-08-03</td><td>+8.9%</td><td>+5.7%</td></tr>
+<tr><td>2026-08-04</td><td>+9.8%</td><td>+6.7%</td></tr>
+<tr><td>2026-08-05</td><td>+9.0%</td><td>+7.8%</td></tr>
+<tr><td>2026-08-06</td><td>+10.6%</td><td>+7.9%</td></tr>
+<tr><td>2026-08-07</td><td>+10.2%</td><td>+8.7%</td></tr>
+<tr><td>2026-08-08</td><td>+10.7%</td><td>+9.4%</td></tr>
+<tr><td>2026-08-09</td><td>+11.0%</td><td>+10.0%</td></tr>
+<tr><td>2026-08-10</td><td>+10.0%</td><td>+10.2%</td></tr>
+<tr><td>2026-08-11</td><td>+10.8%</td><td>+10.3%</td></tr>
+<tr><td>2026-08-12</td><td>+7.9%</td><td>+10.2%</td></tr>
+<tr><td>2026-08-13</td><td>+4.9%</td><td>+9.4%</td></tr>
+<tr><td>2026-08-14</td><td>-2.7%</td><td>+7.5%</td></tr>
+<tr><td>2026-08-15</td><td>+7.8%</td><td>+7.1%</td></tr>
+<tr><td>2026-08-16</td><td>+10.0%</td><td>+7.0%</td></tr>
+<tr><td>2026-08-17</td><td>+6.9%</td><td>+6.5%</td></tr>
+<tr><td>2026-08-18</td><td>+5.4%</td><td>+5.8%</td></tr>
+<tr><td>2026-08-19</td><td>+11.0%</td><td>+6.2%</td></tr>
+<tr><td>2026-08-20</td><td>+11.3%</td><td>+7.1%</td></tr>
+<tr><td>2026-08-21</td><td>+58.8%</td><td>+15.9%</td></tr>
+<tr><td>2026-08-22</td><td>+90.5%</td><td>+27.7%</td></tr>
+<tr><td>2026-08-23</td><td>+43.0%</td><td>+32.4%</td></tr>
+<tr><td>2026-08-24</td><td>+11.4%</td><td>+33.0%</td></tr>
+<tr><td>2026-08-25</td><td>+11.0%</td><td>+33.8%</td></tr>
+<tr><td>2026-08-26</td><td>+10.8%</td><td>+33.8%</td></tr>
+<tr><td>2026-08-27</td><td>+11.8%</td><td>+33.9%</td></tr>
+<tr><td>2026-08-28</td><td>+11.0%</td><td>+27.0%</td></tr>
+<tr><td>2026-08-29</td><td>+10.4%</td><td>+15.6%</td></tr>
+<tr><td>2026-08-30</td><td>+11.0%</td><td>+11.0%</td></tr>
+<tr><td>2026-08-31</td><td>+8.7%</td><td>+10.6%</td></tr>
+<tr><td>2026-09-01</td><td>+11.0%</td><td>+10.6%</td></tr>
+<tr><td>2026-09-02</td><td>+9.1%</td><td>+10.4%</td></tr>
+<tr><td>2026-09-03</td><td>+11.5%</td><td>+10.4%</td></tr>
+<tr><td>2026-09-04</td><td>+12.3%</td><td>+10.6%</td></tr>
+<tr><td>2026-09-05</td><td>+11.2%</td><td>+10.7%</td></tr>
+<tr><td>2026-09-06</td><td>+28.0%</td><td>+13.1%</td></tr>
+<tr><td>2026-09-07</td><td>+16.8%</td><td>+14.3%</td></tr>
+<tr><td>2026-09-08</td><td>+11.0%</td><td>+14.3%</td></tr>
+<tr><td>2026-09-09</td><td>+11.4%</td><td>+14.6%</td></tr>
+<tr><td>2026-09-10</td><td>+9.1%</td><td>+14.3%</td></tr>
+<tr><td>2026-09-11</td><td>+10.2%</td><td>+14.0%</td></tr>
+<tr><td>2026-09-12</td><td>+7.6%</td><td>+13.5%</td></tr>
+<tr><td>2026-09-13</td><td>+10.0%</td><td>+10.9%</td></tr>
+<tr><td>2026-09-14</td><td>+11.0%</td><td>+10.0%</td></tr>
+<tr><td>2026-09-15</td><td>+11.0%</td><td>+10.0%</td></tr>
+<tr><td>2026-09-16</td><td>+10.0%</td><td>+9.8%</td></tr>
+<tr><td>2026-09-17</td><td>+11.0%</td><td>+10.1%</td></tr>
+<tr><td>2026-09-18</td><td>+19.7%</td><td>+11.4%</td></tr>
+<tr><td>2026-09-19</td><td>+48.3%</td><td>+17.3%</td></tr>
+<tr><td>2026-09-20</td><td>+15.0%</td><td>+18.0%</td></tr>
+<tr><td>2026-09-21</td><td>+43.4%</td><td>+22.6%</td></tr>
+<tr><td>2026-09-22</td><td>+20.5%</td><td>+24.0%</td></tr>
+<tr><td>2026-09-23</td><td>+13.4%</td><td>+24.5%</td></tr>
+<tr><td>2026-09-24</td><td>+10.9%</td><td>+24.4%</td></tr>
+<tr><td>2026-09-25</td><td>+25.6%</td><td>+25.3%</td></tr>
+<tr><td>2026-09-26</td><td>+15.6%</td><td>+20.6%</td></tr>
+<tr><td>2026-09-27</td><td>+20.0%</td><td>+21.3%</td></tr>
+<tr><td>2026-09-28</td><td>+11.0%</td><td>+16.7%</td></tr>
+<tr><td>2026-09-29</td><td>+11.0%</td><td>+15.3%</td></tr>
+<tr><td>2026-09-30</td><td>+11.7%</td><td>+15.1%</td></tr>
+<tr><td>2026-10-01</td><td>+11.0%</td><td>+15.1%</td></tr>
+<tr><td>2026-10-02</td><td>+12.0%</td><td>+13.2%</td></tr>
+<tr><td>2026-10-03</td><td>+11.0%</td><td>+12.5%</td></tr>
+<tr><td>2026-10-04</td><td>+11.0%</td><td>+11.2%</td></tr>
+<tr><td>2026-10-05</td><td>+21.6%</td><td>+12.7%</td></tr>
+<tr><td>2026-10-06</td><td>+11.7%</td><td>+12.8%</td></tr>
+<tr><td>2026-10-07</td><td>+11.0%</td><td>+12.7%</td></tr>
+<tr><td>2026-10-08</td><td>+10.7%</td><td>+12.7%</td></tr>
+<tr><td>2026-10-09</td><td>+11.0%</td><td>+12.5%</td></tr>
+<tr><td>2026-10-10</td><td>+11.0%</td><td>+12.5%</td></tr>
+<tr><td>2026-10-11</td><td>+11.2%</td><td>+12.6%</td></tr>
+<tr><td>2026-10-12</td><td>+10.1%</td><td>+10.9%</td></tr>
+<tr><td>2026-10-13</td><td>+8.5%</td><td>+10.5%</td></tr>
+<tr><td>2026-10-14</td><td>+9.8%</td><td>+10.3%</td></tr>
+<tr><td>2026-10-15</td><td>+4.0%</td><td>+9.4%</td></tr>
+<tr><td>2026-10-16</td><td>+5.1%</td><td>+8.5%</td></tr>
+<tr><td>2026-10-17</td><td>+5.3%</td><td>+7.7%</td></tr>
+<tr><td>2026-10-18</td><td>+1.6%</td><td>+6.3%</td></tr>
+<tr><td>2026-10-19</td><td>+8.1%</td><td>+6.1%</td></tr>
+<tr><td>2026-10-20</td><td>+10.4%</td><td>+6.3%</td></tr>
+<tr><td>2026-10-21</td><td>+11.8%</td><td>+6.6%</td></tr>
+<tr><td>2026-10-22</td><td>+11.0%</td><td>+7.6%</td></tr>
+<tr><td>2026-10-23</td><td>+11.0%</td><td>+8.4%</td></tr>
+<tr><td>2026-10-24</td><td>+10.7%</td><td>+9.2%</td></tr>
+<tr><td>2026-10-25</td><td>+11.0%</td><td>+10.6%</td></tr>
+<tr><td>2026-10-26</td><td>+10.8%</td><td>+10.9%</td></tr>
+<tr><td>2026-10-27</td><td>+10.0%</td><td>+10.9%</td></tr>
+<tr><td>2026-10-28</td><td>+8.7%</td><td>+10.4%</td></tr>
+<tr><td>2026-10-29</td><td>+7.9%</td><td>+10.0%</td></tr>
+<tr><td>2026-10-30</td><td>+21.8%</td><td>+11.6%</td></tr>
+<tr><td>2026-10-31</td><td>+11.0%</td><td>+11.6%</td></tr>
+<tr><td>2026-11-01</td><td>+11.0%</td><td>+11.6%</td></tr>
+<tr><td>2026-11-02</td><td>+11.0%</td><td>+11.6%</td></tr>
+<tr><td>2026-11-03</td><td>+11.0%</td><td>+11.8%</td></tr>
+<tr><td>2026-11-04</td><td>+11.0%</td><td>+12.1%</td></tr>
+<tr><td>2026-11-05</td><td>+10.8%</td><td>+12.5%</td></tr>
+<tr><td>2026-11-06</td><td>+10.8%</td><td>+10.9%</td></tr>
+<tr><td>2026-11-07</td><td>+10.4%</td><td>+10.8%</td></tr>
+<tr><td>2026-11-08</td><td>+6.2%</td><td>+10.2%</td></tr>
+<tr><td>2026-11-09</td><td>+8.6%</td><td>+9.8%</td></tr>
+<tr><td>2026-11-10</td><td>+10.6%</td><td>+9.8%</td></tr>
+<tr><td>2026-11-11</td><td>+10.3%</td><td>+9.7%</td></tr>
+<tr><td>2026-11-12</td><td>+1.0%</td><td>+8.3%</td></tr>
+<tr><td>2026-11-13</td><td>+5.7%</td><td>+7.5%</td></tr>
+<tr><td>2026-11-14</td><td>-8.4%</td><td>+4.9%</td></tr>
+<tr><td>2026-11-15</td><td>-0.3%</td><td>+3.9%</td></tr>
+</tbody></table></div></details>
+</div>
+<script>
+// Shared multi-panel time-series chart: synced crosshair, one tooltip, keyboard support.
+function makeChart(root, opts) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const host = root.querySelector('.plot');
+  const tip = root.querySelector('.tip');
+  const n = opts.dates.length;
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let svg, geo, cur = null, raf = 0;
+
+  function el(tag, attrs, parent, style) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (style) Object.assign(e.style, style);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, cls, anchor) {
+    const t = el('text', { x, y, class: cls, 'text-anchor': anchor || 'start' }, parent);
+    t.textContent = s;
+    return t;
+  }
+  function nice(lo, hi, count) {
+    const raw = (hi - lo) / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    const step = (r >= 7.5 ? 10 : r >= 3.5 ? 5 : r >= 1.5 ? 2 : 1) * mag;
+    const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step;
+    const ticks = [];
+    for (let v = a; v <= b + step / 2; v += step) ticks.push(+v.toFixed(10));
+    return { lo: a, hi: b, ticks };
+  }
+  function fmtDate(d) { return d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+
+  function draw() {
+    host.querySelectorAll('svg').forEach(s => s.remove());
+    const W = Math.max(300, host.clientWidth);
+    const narrow = W < 520;
+    const padL = 46, padR = opts.padR || 14, strip = opts.strip ? 30 : 0, labH = 18, gapP = 14, axisH = 24;
+    let H = strip + axisH + 4;
+    opts.panels.forEach((p, i) => { H += labH + p.h + (i ? gapP : 0); });
+    svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.aria, tabindex: 0 }, host);
+    const plotW = W - padL - padR, step = plotW / (n - 1);
+    const X = i => padL + i * step;
+    const panels = [];
+    let y = strip;
+    opts.panels.forEach((p, pi) => {
+      if (pi) y += gapP;
+      const ly = y + 12; y += labH;
+      const vals = [];
+      p.series.forEach(s => s.values().forEach(v => { if (v != null && isFinite(v)) vals.push(v); }));
+      let lo = Math.min(...vals), hi = Math.max(...vals);
+      if (p.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+      const pad = (hi - lo) * 0.05; hi += pad; if (!p.zero || lo < 0) lo -= pad;
+      const t = nice(lo, hi, narrow ? 3 : (p.ticks || 4));
+      const y0 = y, Y = v => y0 + p.h - (v - t.lo) / (t.hi - t.lo) * p.h;
+      panels.push({ p, Y, t, ly });
+      y += p.h;
+    });
+    const top = strip, bottom = y;
+    geo = { X, panels, top, bottom, W, padL, padR, step };
+
+    // shaded periods span every panel; their labels sit in the strip on top
+    (opts.bands || []).forEach(b => {
+      const x1 = X(b.i0) - step / 2, x2 = X(b.i1) + step / 2;
+      if (b.i0 === b.i1) el('line', { x1: X(b.i0), x2: X(b.i0), y1: top, y2: bottom }, svg, { stroke: 'var(--ink-2)', strokeWidth: 1.5, opacity: 0.55 });
+      else el('rect', { x: x1, y: top, width: Math.max(2, x2 - x1), height: bottom - top }, svg, { fill: 'var(--band)' });
+      if (b.label) {
+        const mid = (x1 + x2) / 2, ty = 11 + (b.row || 0) * 14;
+        let anchor = 'middle', tx = mid;
+        if (mid > W - padR - 70) { anchor = 'end'; tx = Math.min(x2, W - padR); }
+        else if (mid < padL + 40) { anchor = 'start'; tx = Math.max(x1, 2); }
+        txt(svg, tx, ty, narrow && b.short ? b.short : b.label, 'note', anchor);
+      }
+    });
+
+    // grid, ticks and marks per panel
+    panels.forEach(pp => {
+      const { p, Y, t, ly } = pp;
+      txt(svg, padL, ly, p.label, 'plabel');
+      t.ticks.forEach(v => {
+        const yy = Y(v);
+        el('line', { x1: padL, x2: W - padR, y1: yy, y2: yy }, svg, { stroke: v === 0 && p.zero ? 'var(--axis)' : 'var(--grid)', strokeWidth: 1 });
+        txt(svg, padL - 6, yy + 4, p.tick(v).replace('-', '\u2212'), 'tick', 'end');
+      });
+      p.series.forEach(s => {
+        const arr = s.values();
+        if (s.type === 'bar') {
+          const bw = Math.max(1, step * 0.7);
+          arr.forEach((v, i) => {
+            if (v == null || v === 0) return;
+            const a = Y(Math.max(v, 0)), b = Y(Math.min(v, 0));
+            el('rect', { x: X(i) - bw / 2, y: a, width: bw, height: Math.max(0.75, b - a) }, svg, { fill: s.color(v) });
+          });
+        } else {
+          let d = '';
+          arr.forEach((v, i) => { if (v != null) d += (d ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); });
+          el('path', { d }, svg, { fill: 'none', stroke: s.color, strokeWidth: s.width || 2, strokeOpacity: s.opacity || 1, strokeLinejoin: 'round', strokeLinecap: 'round' });
+        }
+      });
+      (p.marks || []).forEach(m => {
+        const v = m.value(), cx = X(m.i), cy = Y(v);
+        el('circle', { cx, cy, r: 4 }, svg, { fill: 'var(--ink)', stroke: 'var(--bg)', strokeWidth: 2 });
+        const right = cx < W * 0.6;
+        txt(svg, cx + (right ? 9 : -9), cy + (m.dy || 4), narrow && m.short ? m.short : m.label, 'note strong', right ? 'start' : 'end');
+      });
+    });
+
+    // x axis: first day of each month
+    const ay = bottom + 16;
+    let lastX = -1e9;
+    opts.dates.forEach((d, i) => {
+      // first row of each month, so a gap over the 1st doesn't drop the label
+      if (i === 0 || d.getUTCMonth() === opts.dates[i - 1].getUTCMonth()) return;
+      const x = X(i);
+      el('line', { x1: x, x2: x, y1: bottom, y2: bottom + 4 }, svg, { stroke: 'var(--axis)', strokeWidth: 1 });
+      if (x - lastX < (narrow ? 34 : 28)) return;
+      txt(svg, x, ay, MON[d.getUTCMonth()], 'tick', 'middle'); lastX = x;
+    });
+
+    // crosshair layer
+    const g = el('g', { 'pointer-events': 'none' }, svg);
+    const vline = el('line', { y1: top, y2: bottom }, g, { stroke: 'var(--ink-2)', strokeWidth: 1, opacity: 0 });
+    const dots = [];
+    panels.forEach(({ p, Y }) => p.series.forEach(s => {
+      if (s.type === 'bar') return;
+      dots.push({ s, Y, c: el('circle', { r: 4 }, g, { fill: s.color, stroke: 'var(--bg)', strokeWidth: 2, opacity: 0 }) });
+    }));
+    geo.vline = vline; geo.dots = dots;
+    const hit = el('rect', { x: padL - step / 2, y: top, width: plotW + step, height: bottom - top }, svg, { fill: 'transparent' });
+    hit.addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(); show(Math.round((e.clientX - r.left - padL) / step)); });
+    hit.addEventListener('pointerleave', hide);
+    svg.addEventListener('focus', () => show(cur == null ? n - 1 : cur));
+    svg.addEventListener('blur', hide);
+    svg.addEventListener('keydown', e => {
+      const k = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+      if (k) { e.preventDefault(); show((cur == null ? n - 1 : cur) + k * (e.shiftKey ? 7 : 1)); }
+      if (e.key === 'Escape') hide();
+    });
+    if (cur != null && root.dataset.active === '1') show(cur);
+  }
+
+  function show(i) {
+    i = Math.max(0, Math.min(n - 1, i)); cur = i; root.dataset.active = '1';
+    const x = geo.X(i);
+    geo.vline.setAttribute('x1', x); geo.vline.setAttribute('x2', x); geo.vline.style.opacity = 0.5;
+    geo.dots.forEach(({ s, Y, c }) => {
+      const v = s.values()[i];
+      if (v == null) { c.style.opacity = 0; return; }
+      c.setAttribute('cx', x); c.setAttribute('cy', Y(v)); c.style.opacity = 1;
+    });
+    tip.replaceChildren();
+    const h = document.createElement('div'); h.className = 'tip-date'; h.textContent = fmtDate(opts.dates[i]); tip.appendChild(h);
+    opts.tooltip(i).forEach(r => {
+      const row = document.createElement('div'); row.className = 'tip-row' + (r.sep ? ' sep' : '');
+      const key = document.createElement('span'); key.className = 'key' + (r.key ? '' : ' blank');
+      if (r.key) key.style.background = r.key;
+      const v = document.createElement('strong'); v.textContent = r.value;
+      const l = document.createElement('span'); l.className = 'tip-label'; l.textContent = r.label;
+      row.append(key, v, l); tip.appendChild(row);
+    });
+    tip.hidden = false;
+    const tw = tip.offsetWidth, hw = host.clientWidth;
+    let left = x + 14; if (left + tw > hw - 4) left = x - 14 - tw; if (left < 4) left = 4;
+    tip.style.left = left + 'px'; tip.style.top = (geo.top + 6) + 'px';
+  }
+  function hide() {
+    root.dataset.active = '0'; tip.hidden = true;
+    if (!geo) return;
+    geo.vline.style.opacity = 0; geo.dots.forEach(d => d.c.style.opacity = 0);
+  }
+
+  new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }).observe(host);
+  draw();
+  return { redraw: draw };
+}
+
+const DATA = {"d":["2026-06-26","2026-06-27","2026-06-28","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-03","2026-07-04","2026-07-05","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-11","2026-07-12","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-18","2026-07-19","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-25","2026-07-26","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-01","2026-08-02","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07","2026-08-08","2026-08-09","2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-22","2026-08-23","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-29","2026-08-30","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-05","2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12","2026-09-13","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-19","2026-09-20","2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-26","2026-09-27","2026-09-28","2026-09-29","2026-09-30","2026-10-01","2026-10-02","2026-10-03","2026-10-04","2026-10-05","2026-10-06","2026-10-07","2026-10-08","2026-10-09","2026-10-10","2026-10-11","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-17","2026-10-18","2026-10-19","2026-10-20","2026-10-21","2026-10-22","2026-10-23","2026-10-24","2026-10-25","2026-10-26","2026-10-27","2026-10-28","2026-10-29","2026-10-30","2026-10-31","2026-11-01","2026-11-02","2026-11-03","2026-11-04","2026-11-05","2026-11-06","2026-11-07","2026-11-08","2026-11-09","2026-11-10","2026-11-11","2026-11-12","2026-11-13","2026-11-14","2026-11-15"],"f":[7.32,10.14,-3.87,10.95,3.85,9.66,10.95,10.95,10.65,8.94,9.51,10.71,9.07,10.95,10.95,10.43,10.95,9.69,10.95,10.95,10.95,7.87,10.41,9.97,10.95,10.95,10.95,10.95,10.87,10.63,10.95,9.52,3.15,1.17,10.16,4.02,6.26,6.45,8.92,9.79,8.98,10.55,10.22,10.73,10.95,10.03,10.77,7.94,4.92,-2.72,7.78,10.03,6.92,5.4,10.95,11.33,58.76,90.5,42.97,11.39,10.95,10.77,11.77,10.95,10.43,10.95,8.72,10.95,9.11,11.52,12.33,11.23,28.01,16.83,10.95,11.39,9.14,10.24,7.63,10.04,10.95,10.95,9.97,10.95,19.66,48.26,15.0,43.35,20.54,13.41,10.9,25.64,15.57,20.0,10.95,10.95,11.66,10.95,12.04,10.95,10.95,21.6,11.71,10.95,10.71,10.95,10.95,11.2,10.14,8.46,9.84,4.01,5.1,5.26,1.59,8.15,10.38,11.81,10.95,10.95,10.68,10.95,10.78,10.04,8.71,7.93,21.81,10.95,10.95,10.95,10.95,10.95,10.78,10.81,10.37,6.25,8.58,10.58,10.32,0.98,5.71,-8.44,-0.35],"f7":[7.32,8.73,4.53,6.13,5.68,6.34,7.0,7.52,7.59,9.42,9.22,10.2,10.11,10.11,10.11,10.08,10.37,10.39,10.43,10.7,10.7,10.26,10.25,10.11,10.29,10.29,10.29,10.29,10.72,10.75,10.89,10.69,9.57,8.18,8.06,7.09,6.46,5.82,5.73,6.68,7.8,7.85,8.74,9.38,10.02,10.18,10.32,10.17,9.37,7.52,7.1,6.97,6.52,5.75,6.18,7.1,15.88,27.7,32.41,33.04,33.84,33.81,33.87,27.04,15.61,11.03,10.65,10.65,10.41,10.38,10.57,10.69,13.13,14.28,14.28,14.61,14.27,13.97,13.46,10.89,10.05,10.05,9.85,10.1,11.45,17.25,17.96,22.59,23.96,24.45,24.45,25.3,20.63,21.34,16.72,15.35,15.1,15.1,13.16,12.5,11.21,12.73,12.84,12.74,12.7,12.54,12.54,12.58,10.94,10.48,10.32,9.37,8.53,7.72,6.34,6.06,6.33,6.61,7.6,8.44,9.22,10.55,10.93,10.88,10.44,10.01,11.56,11.6,11.6,11.62,11.75,12.07,12.48,10.91,10.82,10.15,9.81,9.76,9.67,8.27,7.54,4.85,3.91]};
+const DATES = DATA.d.map(s => new Date(s + 'T00:00:00Z'));
+const pct = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
+const usd = v => (v < 0 ? '\u2212' : v > 0 ? '+' : '') + '$' + Math.abs(Math.round(v)).toLocaleString('en-US');
+
+let mode = '7';
+const chart = makeChart(document.getElementById('root'), {
+  dates: DATES, aria: 'ENA funding rate on Hyperliquid, annualized',
+  panels: [
+    { label: 'Funding, annualized', h: 220, zero: true, tick: v => v + '%',
+      series: [ { type: 'bar', values: () => mode === '7' ? DATA.f7 : DATA.f, color: v => v >= 0 ? 'var(--pos)' : 'var(--neg)' } ] }
+  ],
+  tooltip: i => [
+    { key: (mode === '7' ? DATA.f7[i] : DATA.f[i]) >= 0 ? 'var(--pos)' : 'var(--neg)', value: pct(mode === '7' ? DATA.f7[i] : DATA.f[i]), label: mode === '7' ? 'Funding (7d avg)' : 'Funding that day' }
+  ]
+});
+for (const [id, m] of [['m7', '7'], ['m1', '1']]) document.getElementById(id).addEventListener('click', () => {
+  mode = m;
+  document.getElementById('m7').setAttribute('aria-pressed', m === '7');
+  document.getElementById('m1').setAttribute('aria-pressed', m === '1');
+  chart.redraw();
+});
+
+</script>

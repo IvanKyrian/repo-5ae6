@@ -1,0 +1,299 @@
+<title>USDE Trade Scenarios</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one compact chart card sized for a Notion embed; header, legend row, plot, table toggle. */
+:root {
+  --bg: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --band: rgba(11, 11, 11, 0.055); --line: rgba(11, 11, 11, 0.10);
+  --s-bin: #2a78d6; --s-hl: #eb6834; --pos: #1baf7a; --neg: #e34948; --s-strat: #2a78d6;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --band: rgba(255, 255, 255, 0.06); --line: rgba(255, 255, 255, 0.10);
+    --s-bin: #3987e5; --s-hl: #d95926; --pos: #199e70; --neg: #e66767; --s-strat: #3987e5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --band: rgba(255, 255, 255, 0.06); --line: rgba(255, 255, 255, 0.10);
+  --s-bin: #3987e5; --s-hl: #d95926; --pos: #199e70; --neg: #e66767; --s-strat: #3987e5;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 18px 20px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 14px; }
+h1 { font-size: 17px; font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.005em; }
+.sub { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.45; max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.stat { display: grid; gap: 2px; min-width: 0; }
+.stat span { font-size: 11px; color: var(--muted); letter-spacing: 0.02em; }
+.stat b { font-size: 18px; font-weight: 600; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lk { width: 16px; height: 2px; border-radius: 1px; display: inline-block; }
+.lk.thick { height: 6px; border-radius: 3px; opacity: 0.4; }
+.sq { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; padding: 2px; gap: 2px; }
+.seg button { font: inherit; font-size: 12px; border: 0; background: transparent; color: var(--ink-2); padding: 4px 10px; border-radius: 5px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible, svg:focus-visible, summary:focus-visible { outline: 2px solid var(--s-bin); outline-offset: 2px; }
+.plot { position: relative; min-width: 0; }
+.plot svg { display: block; overflow: visible; touch-action: pan-y; }
+.tick { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.plabel { font-size: 12px; fill: var(--ink-2); font-weight: 500; }
+.note { font-size: 11px; fill: var(--ink-2); }
+.note.strong { fill: var(--ink); font-weight: 600; }
+.tip { position: absolute; pointer-events: none; background: var(--bg); border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+  display: grid; gap: 4px; min-width: 170px; z-index: 2; }
+.tip-date { font-size: 11px; color: var(--muted); }
+.tip-row { display: grid; grid-template-columns: 14px auto 1fr; align-items: center; gap: 6px; }
+.tip-row.sep { border-top: 1px solid var(--line); padding-top: 4px; margin-top: 2px; }
+.tip-row strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip-label { color: var(--ink-2); }
+.key { width: 12px; height: 2px; border-radius: 1px; }
+.key.blank { background: transparent; }
+.foot { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: 0; max-width: 90ch; }
+details { font-size: 12px; color: var(--ink-2); }
+summary { cursor: pointer; width: fit-content; }
+.tablewrap { overflow: auto; max-height: 320px; margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 4px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { position: sticky; top: 0; background: var(--bg); color: var(--ink); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap" id="root">
+<header>
+  <h1>USDE trade: P&amp;L by exit mNAV</h1>
+  <p class="sub">Entry at today's 0.30x. $500k long USDE, $500k short ENA. ENA price flat, before funding and costs. Exit levels come from the mNAV history since listing.</p>
+</header>
+<div class="plot" id="sc"></div>
+<p class="foot">Return on the long = exit mNAV ÷ entry mNAV − 1. The ENA short hedges the token price, so with equal dollars on each side what is left is the change in the multiple. If ENA moves, the result scales by (1 + ENA move). Funding on the short adds about 12% a year on $500k at the average rate since listing.</p>
+<details><summary>Show data table</summary><div class="tablewrap"><table><thead><tr><th>Scenario</th><th>Exit mNAV</th><th>Date seen</th><th>Return on long</th><th>P&amp;L on $500k</th></tr></thead><tbody>
+<tr><td>Historical max</td><td>0.522x</td><td>2026-09-25</td><td>+76.8%</td><td>+$383,937</td></tr>
+<tr><td>Historical average</td><td>0.332x</td><td></td><td>+12.5%</td><td>+$62,328</td></tr>
+<tr><td>Today (entry)</td><td>0.295x</td><td>2026-11-16</td><td>+0.0%</td><td>$0</td></tr>
+<tr><td>Historical min</td><td>0.130x</td><td>2026-07-24</td><td>-55.9%</td><td>−$279,435</td></tr>
+<tr><td>Half the historical min</td><td>0.065x</td><td></td><td>-77.9%</td><td>−$389,718</td></tr>
+<tr><td>Zero</td><td>0.000x</td><td></td><td>-100.0%</td><td>−$500,000</td></tr>
+</tbody></table></div></details>
+</div>
+<script>
+// Shared multi-panel time-series chart: synced crosshair, one tooltip, keyboard support.
+function makeChart(root, opts) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const host = root.querySelector('.plot');
+  const tip = root.querySelector('.tip');
+  const n = opts.dates.length;
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let svg, geo, cur = null, raf = 0;
+
+  function el(tag, attrs, parent, style) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (style) Object.assign(e.style, style);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, cls, anchor) {
+    const t = el('text', { x, y, class: cls, 'text-anchor': anchor || 'start' }, parent);
+    t.textContent = s;
+    return t;
+  }
+  function nice(lo, hi, count) {
+    const raw = (hi - lo) / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    const step = (r >= 7.5 ? 10 : r >= 3.5 ? 5 : r >= 1.5 ? 2 : 1) * mag;
+    const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step;
+    const ticks = [];
+    for (let v = a; v <= b + step / 2; v += step) ticks.push(+v.toFixed(10));
+    return { lo: a, hi: b, ticks };
+  }
+  function fmtDate(d) { return d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+
+  function draw() {
+    host.querySelectorAll('svg').forEach(s => s.remove());
+    const W = Math.max(300, host.clientWidth);
+    const narrow = W < 520;
+    const padL = 46, padR = opts.padR || 14, strip = opts.strip ? 30 : 0, labH = 18, gapP = 14, axisH = 24;
+    let H = strip + axisH + 4;
+    opts.panels.forEach((p, i) => { H += labH + p.h + (i ? gapP : 0); });
+    svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.aria, tabindex: 0 }, host);
+    const plotW = W - padL - padR, step = plotW / (n - 1);
+    const X = i => padL + i * step;
+    const panels = [];
+    let y = strip;
+    opts.panels.forEach((p, pi) => {
+      if (pi) y += gapP;
+      const ly = y + 12; y += labH;
+      const vals = [];
+      p.series.forEach(s => s.values().forEach(v => { if (v != null && isFinite(v)) vals.push(v); }));
+      let lo = Math.min(...vals), hi = Math.max(...vals);
+      if (p.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+      const pad = (hi - lo) * 0.05; hi += pad; if (!p.zero || lo < 0) lo -= pad;
+      const t = nice(lo, hi, narrow ? 3 : (p.ticks || 4));
+      const y0 = y, Y = v => y0 + p.h - (v - t.lo) / (t.hi - t.lo) * p.h;
+      panels.push({ p, Y, t, ly });
+      y += p.h;
+    });
+    const top = strip, bottom = y;
+    geo = { X, panels, top, bottom, W, padL, padR, step };
+
+    // shaded periods span every panel; their labels sit in the strip on top
+    (opts.bands || []).forEach(b => {
+      const x1 = X(b.i0) - step / 2, x2 = X(b.i1) + step / 2;
+      if (b.i0 === b.i1) el('line', { x1: X(b.i0), x2: X(b.i0), y1: top, y2: bottom }, svg, { stroke: 'var(--ink-2)', strokeWidth: 1.5, opacity: 0.55 });
+      else el('rect', { x: x1, y: top, width: Math.max(2, x2 - x1), height: bottom - top }, svg, { fill: 'var(--band)' });
+      if (b.label) {
+        const mid = (x1 + x2) / 2, ty = 11 + (b.row || 0) * 14;
+        let anchor = 'middle', tx = mid;
+        if (mid > W - padR - 70) { anchor = 'end'; tx = Math.min(x2, W - padR); }
+        else if (mid < padL + 40) { anchor = 'start'; tx = Math.max(x1, 2); }
+        txt(svg, tx, ty, narrow && b.short ? b.short : b.label, 'note', anchor);
+      }
+    });
+
+    // grid, ticks and marks per panel
+    panels.forEach(pp => {
+      const { p, Y, t, ly } = pp;
+      txt(svg, padL, ly, p.label, 'plabel');
+      t.ticks.forEach(v => {
+        const yy = Y(v);
+        el('line', { x1: padL, x2: W - padR, y1: yy, y2: yy }, svg, { stroke: v === 0 && p.zero ? 'var(--axis)' : 'var(--grid)', strokeWidth: 1 });
+        txt(svg, padL - 6, yy + 4, p.tick(v).replace('-', '\u2212'), 'tick', 'end');
+      });
+      p.series.forEach(s => {
+        const arr = s.values();
+        if (s.type === 'bar') {
+          const bw = Math.max(1, step * 0.7);
+          arr.forEach((v, i) => {
+            if (v == null || v === 0) return;
+            const a = Y(Math.max(v, 0)), b = Y(Math.min(v, 0));
+            el('rect', { x: X(i) - bw / 2, y: a, width: bw, height: Math.max(0.75, b - a) }, svg, { fill: s.color(v) });
+          });
+        } else {
+          let d = '';
+          arr.forEach((v, i) => { if (v != null) d += (d ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); });
+          el('path', { d }, svg, { fill: 'none', stroke: s.color, strokeWidth: s.width || 2, strokeOpacity: s.opacity || 1, strokeLinejoin: 'round', strokeLinecap: 'round' });
+        }
+      });
+      (p.marks || []).forEach(m => {
+        const v = m.value(), cx = X(m.i), cy = Y(v);
+        el('circle', { cx, cy, r: 4 }, svg, { fill: 'var(--ink)', stroke: 'var(--bg)', strokeWidth: 2 });
+        const right = cx < W * 0.6;
+        txt(svg, cx + (right ? 9 : -9), cy + (m.dy || 4), narrow && m.short ? m.short : m.label, 'note strong', right ? 'start' : 'end');
+      });
+    });
+
+    // x axis: first day of each month
+    const ay = bottom + 16;
+    let lastX = -1e9;
+    opts.dates.forEach((d, i) => {
+      // first row of each month, so a gap over the 1st doesn't drop the label
+      if (i === 0 || d.getUTCMonth() === opts.dates[i - 1].getUTCMonth()) return;
+      const x = X(i);
+      el('line', { x1: x, x2: x, y1: bottom, y2: bottom + 4 }, svg, { stroke: 'var(--axis)', strokeWidth: 1 });
+      if (x - lastX < (narrow ? 34 : 28)) return;
+      txt(svg, x, ay, MON[d.getUTCMonth()], 'tick', 'middle'); lastX = x;
+    });
+
+    // crosshair layer
+    const g = el('g', { 'pointer-events': 'none' }, svg);
+    const vline = el('line', { y1: top, y2: bottom }, g, { stroke: 'var(--ink-2)', strokeWidth: 1, opacity: 0 });
+    const dots = [];
+    panels.forEach(({ p, Y }) => p.series.forEach(s => {
+      if (s.type === 'bar') return;
+      dots.push({ s, Y, c: el('circle', { r: 4 }, g, { fill: s.color, stroke: 'var(--bg)', strokeWidth: 2, opacity: 0 }) });
+    }));
+    geo.vline = vline; geo.dots = dots;
+    const hit = el('rect', { x: padL - step / 2, y: top, width: plotW + step, height: bottom - top }, svg, { fill: 'transparent' });
+    hit.addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(); show(Math.round((e.clientX - r.left - padL) / step)); });
+    hit.addEventListener('pointerleave', hide);
+    svg.addEventListener('focus', () => show(cur == null ? n - 1 : cur));
+    svg.addEventListener('blur', hide);
+    svg.addEventListener('keydown', e => {
+      const k = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+      if (k) { e.preventDefault(); show((cur == null ? n - 1 : cur) + k * (e.shiftKey ? 7 : 1)); }
+      if (e.key === 'Escape') hide();
+    });
+    if (cur != null && root.dataset.active === '1') show(cur);
+  }
+
+  function show(i) {
+    i = Math.max(0, Math.min(n - 1, i)); cur = i; root.dataset.active = '1';
+    const x = geo.X(i);
+    geo.vline.setAttribute('x1', x); geo.vline.setAttribute('x2', x); geo.vline.style.opacity = 0.5;
+    geo.dots.forEach(({ s, Y, c }) => {
+      const v = s.values()[i];
+      if (v == null) { c.style.opacity = 0; return; }
+      c.setAttribute('cx', x); c.setAttribute('cy', Y(v)); c.style.opacity = 1;
+    });
+    tip.replaceChildren();
+    const h = document.createElement('div'); h.className = 'tip-date'; h.textContent = fmtDate(opts.dates[i]); tip.appendChild(h);
+    opts.tooltip(i).forEach(r => {
+      const row = document.createElement('div'); row.className = 'tip-row' + (r.sep ? ' sep' : '');
+      const key = document.createElement('span'); key.className = 'key' + (r.key ? '' : ' blank');
+      if (r.key) key.style.background = r.key;
+      const v = document.createElement('strong'); v.textContent = r.value;
+      const l = document.createElement('span'); l.className = 'tip-label'; l.textContent = r.label;
+      row.append(key, v, l); tip.appendChild(row);
+    });
+    tip.hidden = false;
+    const tw = tip.offsetWidth, hw = host.clientWidth;
+    let left = x + 14; if (left + tw > hw - 4) left = x - 14 - tw; if (left < 4) left = 4;
+    tip.style.left = left + 'px'; tip.style.top = (geo.top + 6) + 'px';
+  }
+  function hide() {
+    root.dataset.active = '0'; tip.hidden = true;
+    if (!geo) return;
+    geo.vline.style.opacity = 0; geo.dots.forEach(d => d.c.style.opacity = 0);
+  }
+
+  new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }).observe(host);
+  draw();
+  return { redraw: draw };
+}
+
+const DATA = {"d":[]};
+const DATES = DATA.d.map(s => new Date(s + 'T00:00:00Z'));
+const pct = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
+const usd = v => (v < 0 ? '\u2212' : v > 0 ? '+' : '') + '$' + Math.abs(Math.round(v)).toLocaleString('en-US');
+
+const SC = [{"n": "Historical max", "m": 0.522, "d": "2026-09-25", "r": 76.8, "p": 383937}, {"n": "Historical average", "m": 0.332, "d": null, "r": 12.5, "p": 62328}, {"n": "Historical min", "m": 0.13, "d": "2026-07-24", "r": -55.9, "p": -279435}, {"n": "Half the historical min", "m": 0.065, "d": null, "r": -77.9, "p": -389718}, {"n": "Zero", "m": 0.0, "d": null, "r": -100.0, "p": -500000}];
+function drawSc() {
+  const host = document.getElementById('sc'); host.replaceChildren();
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = Math.max(300, host.clientWidth), narrow = W < 560;
+  const labW = narrow ? 112 : 190, valW = narrow ? 92 : 150, rowH = 44, top = 8;
+  const H = top + SC.length * rowH + 8;
+  const svg = document.createElementNS(NS, 'svg');
+  svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'P&L by exit mNAV scenario');
+  host.appendChild(svg);
+  const lo = Math.min(...SC.map(s => s.r), 0), hi = Math.max(...SC.map(s => s.r), 0);
+  const x0 = labW, x1 = W - valW, X = v => x0 + (v - lo) / (hi - lo) * (x1 - x0);
+  const mk = (tag, a, st) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (st) Object.assign(e.style, st); svg.appendChild(e); return e; };
+  const tx = (x, y, s, cls, anchor) => { const t = mk('text', { x, y, class: cls, 'text-anchor': anchor || 'start' }); t.textContent = s; return t; };
+  mk('line', { x1: X(0), x2: X(0), y1: top - 4, y2: H - 4 }, { stroke: 'var(--axis)', strokeWidth: 1 });
+  SC.forEach((s, i) => {
+    const y = top + i * rowH, cy = y + rowH / 2;
+    tx(0, cy - 3, s.n, 'plabel');
+    tx(0, cy + 12, s.m.toFixed(2) + 'x' + (s.d ? ' · ' + (d => d.getUTCDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()])(new Date(s.d + 'T00:00:00Z')) : ''), 'tick');
+    const a = X(Math.min(0, s.r)), b = X(Math.max(0, s.r));
+    mk('rect', { x: a, y: cy - 9, width: Math.max(1, b - a), height: 18, rx: 2 }, { fill: s.r >= 0 ? 'var(--pos)' : 'var(--neg)' });
+    tx(W, cy - 3, usd(s.p), 'note strong', 'end');
+    tx(W, cy + 12, pct(s.r) + ' on the long', 'tick', 'end');
+  });
+}
+new ResizeObserver(() => requestAnimationFrame(drawSc)).observe(document.getElementById('sc'));
+drawSc();
+
+</script>
