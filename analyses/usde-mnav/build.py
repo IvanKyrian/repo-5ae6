@@ -15,16 +15,18 @@ DATA, OUT = HERE / "data", HERE / "charts"
 
 # --- company facts (Q3 2026 results, 8-K filed 16 Nov 2026) ---
 SHARES = 24_029_576          # Class A shares outstanding (only class with economics)
-ENA_HELD = 3.029e9           # ~$802M / $0.2648 (30 Sep) and ~$576M / $0.1901 (30 Oct)
+# ENA received at closing (Q2 10-Q, Note 3): Ethena contribution 284,954,407.29 + PIPE 1,405,754,435.84
+# + additional PIPE 1,340,695,577.81. Q3 8-K values ($802M at $0.2648, $576M at $0.1901) reconcile within 0.1%.
+ENA_HELD = 284_954_407.29 + 1_405_754_435.84 + 1_340_695_577.81
 CASH = 10_352_692
 OTHER_ASSETS = 12_771_432 - 10_352_692 + 689_375   # other current assets + intangibles
 CUR_LIAB = 1_983_077
 WAIVER_SIGNED, WAIVER_EFFECTIVE = "2026-09-14", "2026-10-05"
 
 # --- trade sizing used in the report ---
-LONG = 500_000
-SHORT = 500_000
-HL_LEV = 2
+LONG = 1_000_000
+SHORT = 1_000_000
+HL_LEV = 5
 
 
 def load():
@@ -156,6 +158,10 @@ def dlabel(s):
     return f"{d.day} {d:%b}"
 
 
+def short_usd(v):
+    return f"${v/1e6:g}M" if v >= 1e6 else f"${v/1e3:,.0f}k"
+
+
 def money(v, sign=True):
     s = "−" if v < 0 else ("+" if sign and v > 0 else "")
     return f"{s}${abs(v):,.0f}"
@@ -187,7 +193,7 @@ def charts(rows, fund, fdays, N, i_min, i_max, i_eff, i_sig):
   <span><i class="lk" style="background:var(--ink-2);opacity:.55"></i>Waiver dates</span>
 </div></div>
 <div class="plot"><div class="tip" hidden></div></div>
-<p class="foot">mNAV = (USDE close × {N['shares']:,} Class A shares) ÷ ({N['ena_held']/1e9:.3f}B ENA × ENA price at the Nasdaq close). ENA held and share count from the Q3 2026 results (8-K, 16 Nov 2026); both were the same at the end of Q2. ENA price: Hyperliquid ENA perp, hourly candle closing at 4pm New York. USDE: Nasdaq daily close (Yahoo Finance). The last point is intraday. The waiver was signed on 14 Sep (a Monday) and the 8-K was filed on 17 Sep.</p>'''
+<p class="foot">mNAV = (USDE close × {N['shares']:,} Class A shares) ÷ ({N['ena_held']/1e9:.3f}B ENA × ENA price at the Nasdaq close). Share count from the Q3 2026 results (8-K, 16 Nov 2026). ENA held = tokens received at closing per the Q2 10-Q (Note 3); the Q3 values reconcile within 0.1%. ENA price: Hyperliquid ENA perp, hourly candle closing at 4pm New York. USDE: Nasdaq daily close (Yahoo Finance). The last point is intraday. The waiver was signed on 14 Sep (a Monday) and the 8-K was filed on 17 Sep.</p>'''
     script = r'''
 makeChart(document.getElementById('root'), {
   dates: DATES, strip: true, aria: 'USDE mNAV since listing, with the waiver dates marked',
@@ -304,10 +310,10 @@ for (const [id, m] of [['m7', '7'], ['m1', '1']]) document.getElementById(id).ad
     sdata = [dict(n=s["name"], m=round(s["mnav"], 3), d=s["date"], r=round(s["ret"] * 100, 1), p=round(s["pnl"])) for s in items]
     body = f'''<header>
   <h1>USDE trade: P&amp;L by exit mNAV</h1>
-  <p class="sub">Entry at today's {N['mnav']:.2f}x. ${N['long']/1e3:,.0f}k long USDE, ${N['short']/1e3:,.0f}k short ENA. ENA price flat, before funding and costs. Exit levels come from the mNAV history since listing.</p>
+  <p class="sub">Entry at today's {N['mnav']:.2f}x. {short_usd(N['long'])} long USDE, {short_usd(N['short'])} short ENA. ENA price flat, before funding and costs. Exit levels come from the mNAV history since listing.</p>
 </header>
 <div class="plot" id="sc"></div>
-<p class="foot">Return on the long = exit mNAV ÷ entry mNAV − 1. The ENA short hedges the token price, so with equal dollars on each side what is left is the change in the multiple. If ENA moves, the result scales by (1 + ENA move). Funding on the short adds about {N['funding_ann_since_listing']*100:.0f}% a year on ${N['short']/1e3:,.0f}k at the average rate since listing.</p>'''
+<p class="foot">Return on the long = exit mNAV ÷ entry mNAV − 1. The ENA short hedges the token price, so with equal dollars on each side what is left is the change in the multiple. If ENA moves, the result scales by (1 + ENA move). Funding on the short adds about {N['funding_ann_since_listing']*100:.0f}% a year on {short_usd(N['short'])} at the average rate since listing.</p>'''
     script = r'''
 const SC = SCDATA;
 function drawSc() {
@@ -340,7 +346,7 @@ drawSc();
 '''.replace("SCDATA", json.dumps(sdata))
     tab = [[s["name"], f"{s['mnav']:.3f}x", s["date"] or "", f"{s['ret']*100:+.1f}%", money(s["pnl"])] for s in sc]
     (OUT / "usde-scenarios.html").write_text(page("USDE Trade Scenarios", body, dict(d=[]), script,
-        ["Scenario", "Exit mNAV", "Date seen", "Return on long", f"P&amp;L on ${N['long']/1e3:,.0f}k"], tab))
+        ["Scenario", "Exit mNAV", "Date seen", "Return on long", f"P&amp;L on {short_usd(N['long'])}"], tab))
 
 
 if __name__ == "__main__":

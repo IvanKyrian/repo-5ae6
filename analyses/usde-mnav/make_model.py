@@ -51,7 +51,7 @@ row(6, "ENA price ($)", N["ena"], USD4, BLUE, "Hyperliquid ENA perp, " + N["ena_
 
 ws["A8"] = "Company (Q3 2026 results, 8-K filed 16 Nov 2026)"; ws["A8"].font = BOLD
 row(9, "Class A shares outstanding", N["shares"], NUM, BLUE, "Q3 8-K: 24,029,576 Class A shares. Class B (3.16M) has votes but no economics.")
-row(10, "ENA held (tokens)", N["ena_held"], NUM, BLUE, "~$802M ÷ $0.2648 (30 Sep) = ~$576M ÷ $0.1901 (30 Oct) = 3.03B. Company says 'approximately 3.0 billion'.")
+row(10, "ENA held (tokens)", N["ena_held"], NUM, BLUE, "Q2 10-Q Note 3: 284,954,407 (Ethena) + 1,405,754,436 (PIPE) + 1,340,695,578 (additional PIPE). Q3 8-K values reconcile within 0.1%.")
 row(11, "Cash ($)", N["cash"], USD, BLUE, "Balance sheet, 30 Sep 2026")
 row(12, "Other assets ($)", N["other_assets"], USD, BLUE, "Other current assets $2.42M + intangibles $0.69M, 30 Sep 2026")
 row(13, "Current liabilities ($)", N["cur_liab"], USD, BLUE, "Balance sheet, 30 Sep 2026. Warrant liability ($109.6M) excluded: settled in shares, not cash.")
@@ -68,8 +68,12 @@ row(23, "Price ÷ NAV per share (incl. cash and liabilities)", "=B5/B21", MULT, 
 
 ws["A25"] = "Trade"; ws["A25"].font = BOLD
 row(26, "Long USDE on Interactive Brokers ($)", N["long"], USD, BLUE, "Same dollar amount on both legs, not 126 ENA per share.", YELLOW)
+row(36, "USDE shares bought", "=B26/B5", NUM)
+row(37, "USDE avg daily volume, last 20 days (shares)", N["adv20_shares"], NUM, BLUE, "Yahoo Finance daily volume")
+row(38, "Long as % of one day's volume", "=B36/B37", PCT, note="Buying at ~10% of daily volume takes this ÷ 10% days, same to exit")
+row(39, "ENA shorted (tokens)", "=B27/B6", NUM, note="Equal dollars. Not the ENA behind the shares (=B36*B19)")
 row(27, "Short ENA perp on Hyperliquid ($)", N["short"], USD, BLUE, "", YELLOW)
-row(28, "Hyperliquid leverage (x)", N["hl_lev"], '0.0"x"', BLUE, "Keep low: ENA did +270% in Q3. At 2x a ~+45% move uses up the margin.")
+row(28, "Hyperliquid leverage (x)", N["hl_lev"], '0.0"x"', BLUE, "At 5x the margin is 20% of the short. ENA did +24% in one day (21 Aug, +35% intraday) and +73% in 3 days: keep extra collateral ready.")
 row(29, "Capital needed ($)", "=B26+B27/B28", USD, note="Long fully paid on IBKR + Hyperliquid margin")
 row(30, "ENA funding, annualized (short earns if positive)", round(N["funding_ann_since_listing"], 4), PCT, BLUE,
     f"Avg since listing {N['funding_ann_since_listing']:.1%}; last 30 days {N['funding_ann_30d']:.1%}. Can go negative.", YELLOW)

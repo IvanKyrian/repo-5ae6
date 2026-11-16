@@ -1,6 +1,6 @@
 # USDE mNAV trade: long StablecoinX (USDE) on IBKR, short ENA perp on Hyperliquid (Nov 2026)
 
-- `report.md`: write-up (Notion format), $500k per leg.
+- `report.md`: write-up (Notion format), $1M per leg, Hyperliquid at 5x.
 - `usde_mnav_model.xlsx`: scenario model (inputs, balance sheet at market, mNAV history, scenarios, exit mNAV × ENA move grid). All formulas.
 - `usde_mnav_daily.csv`: daily USDE close, ENA price at the Nasdaq close, mNAV, Hyperliquid ENA funding.
 - `numbers.json`: every number used in the report.

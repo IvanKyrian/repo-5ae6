@@ -72,17 +72,17 @@ th { position: sticky; top: 0; background: var(--bg); color: var(--ink); font-we
 <div class="wrap" id="root">
 <header>
   <h1>USDE trade: P&amp;L by exit mNAV</h1>
-  <p class="sub">Entry at today's 0.30x. $500k long USDE, $500k short ENA. ENA price flat, before funding and costs. Exit levels come from the mNAV history since listing.</p>
+  <p class="sub">Entry at today's 0.30x. $1M long USDE, $1M short ENA. ENA price flat, before funding and costs. Exit levels come from the mNAV history since listing.</p>
 </header>
 <div class="plot" id="sc"></div>
-<p class="foot">Return on the long = exit mNAV ÷ entry mNAV − 1. The ENA short hedges the token price, so with equal dollars on each side what is left is the change in the multiple. If ENA moves, the result scales by (1 + ENA move). Funding on the short adds about 12% a year on $500k at the average rate since listing.</p>
-<details><summary>Show data table</summary><div class="tablewrap"><table><thead><tr><th>Scenario</th><th>Exit mNAV</th><th>Date seen</th><th>Return on long</th><th>P&amp;L on $500k</th></tr></thead><tbody>
-<tr><td>Historical max</td><td>0.522x</td><td>2026-09-25</td><td>+76.8%</td><td>+$383,937</td></tr>
-<tr><td>Historical average</td><td>0.332x</td><td></td><td>+12.5%</td><td>+$62,328</td></tr>
+<p class="foot">Return on the long = exit mNAV ÷ entry mNAV − 1. The ENA short hedges the token price, so with equal dollars on each side what is left is the change in the multiple. If ENA moves, the result scales by (1 + ENA move). Funding on the short adds about 12% a year on $1M at the average rate since listing.</p>
+<details><summary>Show data table</summary><div class="tablewrap"><table><thead><tr><th>Scenario</th><th>Exit mNAV</th><th>Date seen</th><th>Return on long</th><th>P&amp;L on $1M</th></tr></thead><tbody>
+<tr><td>Historical max</td><td>0.522x</td><td>2026-09-25</td><td>+76.8%</td><td>+$767,873</td></tr>
+<tr><td>Historical average</td><td>0.332x</td><td></td><td>+12.5%</td><td>+$124,655</td></tr>
 <tr><td>Today (entry)</td><td>0.295x</td><td>2026-11-16</td><td>+0.0%</td><td>$0</td></tr>
-<tr><td>Historical min</td><td>0.130x</td><td>2026-07-24</td><td>-55.9%</td><td>−$279,435</td></tr>
-<tr><td>Half the historical min</td><td>0.065x</td><td></td><td>-77.9%</td><td>−$389,718</td></tr>
-<tr><td>Zero</td><td>0.000x</td><td></td><td>-100.0%</td><td>−$500,000</td></tr>
+<tr><td>Historical min</td><td>0.130x</td><td>2026-07-24</td><td>-55.9%</td><td>−$558,871</td></tr>
+<tr><td>Half the historical min</td><td>0.065x</td><td></td><td>-77.9%</td><td>−$779,435</td></tr>
+<tr><td>Zero</td><td>0.000x</td><td></td><td>-100.0%</td><td>−$1,000,000</td></tr>
 </tbody></table></div></details>
 </div>
 <script>
@@ -267,7 +267,7 @@ const DATES = DATA.d.map(s => new Date(s + 'T00:00:00Z'));
 const pct = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
 const usd = v => (v < 0 ? '\u2212' : v > 0 ? '+' : '') + '$' + Math.abs(Math.round(v)).toLocaleString('en-US');
 
-const SC = [{"n": "Historical max", "m": 0.522, "d": "2026-09-25", "r": 76.8, "p": 383937}, {"n": "Historical average", "m": 0.332, "d": null, "r": 12.5, "p": 62328}, {"n": "Historical min", "m": 0.13, "d": "2026-07-24", "r": -55.9, "p": -279435}, {"n": "Half the historical min", "m": 0.065, "d": null, "r": -77.9, "p": -389718}, {"n": "Zero", "m": 0.0, "d": null, "r": -100.0, "p": -500000}];
+const SC = [{"n": "Historical max", "m": 0.522, "d": "2026-09-25", "r": 76.8, "p": 767873}, {"n": "Historical average", "m": 0.332, "d": null, "r": 12.5, "p": 124655}, {"n": "Historical min", "m": 0.13, "d": "2026-07-24", "r": -55.9, "p": -558871}, {"n": "Half the historical min", "m": 0.065, "d": null, "r": -77.9, "p": -779435}, {"n": "Zero", "m": 0.0, "d": null, "r": -100.0, "p": -1000000}];
 function drawSc() {
   const host = document.getElementById('sc'); host.replaceChildren();
   const NS = 'http://www.w3.org/2000/svg';
