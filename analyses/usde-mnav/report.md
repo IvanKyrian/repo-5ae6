@@ -72,11 +72,9 @@ This doesn't look rational. The main reason for the discount is gone, so it shou
 
 #### **2. Historical mNAV**
 
-*Method:* every trading day since the listing on 26 Jun 2026:
+Every trading day since the listing on 26 Jun 2026:
 
-> **mNAV = (USDE close × 24,029,576 shares) ÷ (3,031,404,421 ENA × ENA price at the Nasdaq close)**
-
-Shares and ENA are the same since the listing (see Context). The ENA price is the Hyperliquid ENA perp at 4pm New York. The last point (16 Nov) is intraday.
+> **mNAV = (USDE price × 24,029,576 shares) ÷ (3,031,404,421 ENA × ENA price)**
 
 📈 mNAV chart: https://claude.ai/artifact/TvrRwmc498eUC7AJtKyzK6
 

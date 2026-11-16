@@ -179,7 +179,7 @@ def charts(rows, fund, fdays, N, i_min, i_max, i_eff, i_sig):
              dict(i0=i_eff, i1=i_eff, label="Lock-ups off (5 Oct)", short="Unlocked", row=1)]
     body = f'''<header>
   <h1>USDE mNAV since listing</h1>
-  <p class="sub">What the market pays for each $1 of ENA that StablecoinX holds. mNAV = market cap ÷ value of the ENA held. 1.0x would mean the stock trades at the value of its tokens. {dlabel(N['start'])} – {asof} 2026.</p>
+  <p class="sub">mNAV = (USDE price × shares) ÷ (ENA held × ENA price). 1.0x would mean the stock trades at the value of its ENA. {dlabel(N['start'])} – {asof} 2026.</p>
 </header>
 <div class="stats">
   <div class="stat"><span>Today</span><b>{N['mnav']:.2f}x</b></div>
@@ -193,7 +193,7 @@ def charts(rows, fund, fdays, N, i_min, i_max, i_eff, i_sig):
   <span><i class="lk" style="background:var(--ink-2);opacity:.55"></i>Waiver dates</span>
 </div></div>
 <div class="plot"><div class="tip" hidden></div></div>
-<p class="foot">mNAV = (USDE close × {N['shares']:,} Class A shares) ÷ ({N['ena_held']/1e9:.3f}B ENA × ENA price at the Nasdaq close). Share count from the Q3 2026 results (8-K, 16 Nov 2026). ENA held = tokens received at closing per the Q2 10-Q (Note 3); the Q3 values reconcile within 0.1%. ENA price: Hyperliquid ENA perp, hourly candle closing at 4pm New York. USDE: Nasdaq daily close (Yahoo Finance). The last point is intraday. The waiver was signed on 14 Sep (a Monday) and the 8-K was filed on 17 Sep.</p>'''
+<p class="foot">mNAV = (USDE price × {N['shares']:,} Class A shares) ÷ ({N['ena_held']:,.0f} ENA × ENA price), daily at the Nasdaq close. Share count from the Q3 2026 results (8-K, 16 Nov 2026). ENA held = tokens received at closing per the Q2 10-Q (Note 3); the Q3 values reconcile within 0.1%. ENA price: Hyperliquid ENA perp, hourly candle closing at 4pm New York. USDE: Nasdaq daily close (Yahoo Finance). The last point is intraday. The waiver was signed on 14 Sep (a Monday) and the 8-K was filed on 17 Sep.</p>'''
     script = r'''
 makeChart(document.getElementById('root'), {
   dates: DATES, strip: true, aria: 'USDE mNAV since listing, with the waiver dates marked',
@@ -220,13 +220,14 @@ makeChart(document.getElementById('root'), {
     data = dict(d=dates, p=[round(r["usde"], 2) for r in rows], n=[round(r["nav_ps"], 2) for r in rows],
                 m=[round(r["mnav"], 4) for r in rows])
     body = f'''<header>
-  <h1>USDE share price vs the ENA behind each share</h1>
-  <p class="sub">Each share is backed by {N['ena_per_share']:.1f} ENA. The grey line is what those tokens are worth; the blue line is what the stock trades at. The gap between them is the discount we want to own. {dlabel(N['start'])} – {asof} 2026.</p>
+  <h1>USDE share price vs ENA value per share</h1>
+  <p class="sub">Grey: what the ENA behind each share is worth ({N['ena_per_share']:.1f} ENA × ENA price). Blue: the USDE share price. The gap between the two lines is the discount. {dlabel(N['start'])} – {asof} 2026.</p>
 </header>
 <div class="stats">
-  <div class="stat"><span>USDE price</span><b>${N['usde']:.2f}</b></div>
-  <div class="stat"><span>ENA per share, at ${N['ena']:.4f}</span><b>${N['ena_ps']:.2f}</b></div>
-  <div class="stat"><span>Paid per $1 of ENA</span><b>${N['mnav']:.2f}</b></div>
+  <div class="stat"><span>USDE share price</span><b>${N['usde']:.2f}</b></div>
+  <div class="stat"><span>ENA value per share</span><b>${N['ena_ps']:.2f}</b></div>
+  <div class="stat"><span>Discount today</span><b>{1 - N['mnav']:.0%}</b></div>
+  <div class="stat"><span>Average discount since listing</span><b>{1 - N['avg']:.0%}</b></div>
 </div>
 <div class="bar"><div class="legend">
   <span><i class="lk" style="background:var(--ink-2)"></i>ENA value per share</span>
@@ -234,7 +235,7 @@ makeChart(document.getElementById('root'), {
   <span><i class="lk" style="background:var(--ink-2);opacity:.55"></i>Lock-ups off (5 Oct)</span>
 </div></div>
 <div class="plot"><div class="tip" hidden></div></div>
-<p class="foot">ENA value per share = ENA price × {N['ena_held']/1e9:.3f}B ENA ÷ {N['shares']:,} shares. Daily closes; the last point is intraday. Sources as in the mNAV chart.</p>'''
+<p class="foot">ENA value per share = ENA price × {N['ena_held']:,.0f} ENA ÷ {N['shares']:,} shares. Discount = 1 − USDE price ÷ ENA value per share. Average discount = average of the daily discounts since listing. Daily closes; the last point is intraday. Sources as in the mNAV chart.</p>'''
     script = r'''
 makeChart(document.getElementById('root'), {
   dates: DATES, strip: true, aria: 'USDE share price against the value of ENA per share',
@@ -246,13 +247,13 @@ makeChart(document.getElementById('root'), {
   tooltip: i => [
     { key: 'var(--ink-2)', value: '$' + DATA.n[i].toFixed(2), label: 'ENA value per share' },
     { key: 'var(--s-strat)', value: '$' + DATA.p[i].toFixed(2), label: 'USDE share price' },
-    { sep: true, value: DATA.m[i].toFixed(2) + 'x', label: 'mNAV' }
+    { sep: true, value: Math.round((1 - DATA.m[i]) * 100) + '%', label: 'Discount' }
   ]
 });
 '''.replace("IEFF", str(i_eff))
-    tab = [[r["date"], f"${r['usde']:.2f}", f"${r['nav_ps']:.2f}", f"{r['mnav']:.3f}x"] for r in rows]
+    tab = [[r["date"], f"${r['usde']:.2f}", f"${r['nav_ps']:.2f}", f"{1 - r['mnav']:.0%}"] for r in rows]
     (OUT / "usde-price-vs-ena.html").write_text(page("USDE Price vs ENA", body, data, script,
-        ["Date", "USDE close", "ENA value per share", "mNAV"], tab))
+        ["Date", "USDE close", "ENA value per share", "Discount"], tab))
 
     # 3. ENA funding on Hyperliquid
     full = [d for d in fdays if len(fund[d]) == 24]
