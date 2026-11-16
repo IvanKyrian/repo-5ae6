@@ -305,49 +305,63 @@ for (const [id, m] of [['m7', '7'], ['m1', '1']]) document.getElementById(id).ad
     (OUT / "ena-funding.html").write_text(page("ENA Funding Hyperliquid", body, data, script,
         ["Date", "Funding (ann.)", "7-day avg"], tab))
 
-    # 4. Scenarios: P&L on the long leg by exit mNAV (static SVG bars)
-    sc = N["scenarios"]
-    items = [s for s in sc if s["name"] != "Today (entry)"]
-    sdata = [dict(n=s["name"], m=round(s["mnav"], 3), d=s["date"], r=round(s["ret"] * 100, 1), p=round(s["pnl"])) for s in items]
-    body = f'''<header>
-  <h1>USDE trade: P&amp;L by exit mNAV</h1>
-  <p class="sub">Entry at today's {N['mnav']:.2f}x. {short_usd(N['long'])} long USDE, {short_usd(N['short'])} short ENA. ENA price flat, before funding and costs. Exit levels come from the mNAV history since listing.</p>
+    # 4. Scenarios: net P&L grid, exit mNAV x ENA move (same inputs and formula as usde_mnav_model.xlsx)
+    M_USDE, M_ENA, M_LONG, M_SHORT = 4.35, 0.1169, 1_000_000, 1_000_000
+    m0 = (M_USDE * N["shares"]) / (N["ena_held"] * M_ENA)
+    moves = [-0.9, -0.5, -0.25, 0, 0.25, 0.5, 1.0]
+    rows_m = [(1.0, ""), (0.9, ""), (0.8, ""), (0.7, ""), (0.6, ""), (round(N["max"], 2), "Max"), (0.5, ""), (0.4, ""),
+              (round(N["avg"], 2), "Avg"), (0.3, ""), (m0, "Entry"), (0.2, ""), (round(N["min"], 2), "Min"), (0.1, ""), (0.0, "")]
+    pnl = lambda m, e: M_LONG * ((1 + e) * m / m0 - 1) - M_SHORT * e
+    grid = [dict(m=m, l=l, v=[round(pnl(m, e)) for e in moves]) for m, l in rows_m]
+    vmax = max(abs(x) for g in grid for x in g["v"])
+    body = f"""<header>
+  <h1>USDE trade: P&amp;L by mNAV and ENA price</h1>
+  <p class="sub">Net P&amp;L on $1M long USDE and $1M short ENA, entering at {m0:.3f}x (USDE ${M_USDE:.2f}, ENA ${M_ENA:.4f}). Rows: mNAV at exit. Columns: ENA price move. No rebalancing, before fees and funding.</p>
 </header>
-<div class="plot" id="sc"></div>
-<p class="foot">Return on the long = exit mNAV ÷ entry mNAV − 1. The ENA short hedges the token price, so with equal dollars on each side what is left is the change in the multiple. If ENA moves, the result scales by (1 + ENA move). Funding on the short adds about {N['funding_ann_since_listing']*100:.0f}% a year on {short_usd(N['short'])} at the average rate since listing.</p>'''
-    script = r'''
-const SC = SCDATA;
-function drawSc() {
-  const host = document.getElementById('sc'); host.replaceChildren();
-  const NS = 'http://www.w3.org/2000/svg';
-  const W = Math.max(300, host.clientWidth), narrow = W < 560;
-  const labW = narrow ? 112 : 190, valW = narrow ? 92 : 150, rowH = 44, top = 8;
-  const H = top + SC.length * rowH + 8;
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'P&L by exit mNAV scenario');
-  host.appendChild(svg);
-  const lo = Math.min(...SC.map(s => s.r), 0), hi = Math.max(...SC.map(s => s.r), 0);
-  const x0 = labW, x1 = W - valW, X = v => x0 + (v - lo) / (hi - lo) * (x1 - x0);
-  const mk = (tag, a, st) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (st) Object.assign(e.style, st); svg.appendChild(e); return e; };
-  const tx = (x, y, s, cls, anchor) => { const t = mk('text', { x, y, class: cls, 'text-anchor': anchor || 'start' }); t.textContent = s; return t; };
-  mk('line', { x1: X(0), x2: X(0), y1: top - 4, y2: H - 4 }, { stroke: 'var(--axis)', strokeWidth: 1 });
-  SC.forEach((s, i) => {
-    const y = top + i * rowH, cy = y + rowH / 2;
-    tx(0, cy - 3, s.n, 'plabel');
-    tx(0, cy + 12, s.m.toFixed(2) + 'x' + (s.d ? ' · ' + (d => d.getUTCDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()])(new Date(s.d + 'T00:00:00Z')) : ''), 'tick');
-    const a = X(Math.min(0, s.r)), b = X(Math.max(0, s.r));
-    mk('rect', { x: a, y: cy - 9, width: Math.max(1, b - a), height: 18, rx: 2 }, { fill: s.r >= 0 ? 'var(--pos)' : 'var(--neg)' });
-    tx(W, cy - 3, usd(s.p), 'note strong', 'end');
-    tx(W, cy + 12, pct(s.r) + ' on the long', 'tick', 'end');
+<div class="bar"><div class="legend">
+  <span><i class="sq" style="background:var(--pos)"></i>We make money</span>
+  <span><i class="sq" style="background:var(--neg)"></i>We lose money</span>
+  <span>Darker = bigger</span>
+</div></div>
+<div class="hm-wrap"><table class="hm" id="hm"></table></div>
+<p class="foot">Net P&amp;L = long × [(1 + ENA move) × exit mNAV ÷ entry mNAV − 1] − short × ENA move. The mNAV decides whether we make or lose money; ENA's move only changes how much. Max, Avg and Min are the mNAV's highest, average and lowest daily close since the 26 Jun 2026 listing. Above $11.50 per share the warrants dilute, so the top rows overstate the gains.</p>
+<style>
+.hm-wrap {{ overflow-x: auto; }}
+.hm {{ border-collapse: separate; border-spacing: 2px; width: 100%; min-width: 560px; font-variant-numeric: tabular-nums; font-size: 12px; }}
+.hm th, .hm td {{ padding: 6px 8px; text-align: right; white-space: nowrap; border: 0; position: static; }}
+.hm thead th {{ color: var(--ink-2); font-weight: 600; background: transparent; }}
+.hm th.rl {{ text-align: left; color: var(--muted); font-weight: 500; width: 1%; }}
+.hm th.rm {{ color: var(--ink); font-weight: 600; text-align: right; width: 1%; }}
+.hm td {{ border-radius: 3px; color: var(--ink); }}
+.hm tr.entry th, .hm tr.entry td {{ font-weight: 700; }}
+.hm tr.entry td {{ outline: 1.5px solid var(--ink-2); outline-offset: -1.5px; }}
+</style>"""
+    script = r"""
+const G = GRID, MOVES = MOVESJS, VMAX = VMAXJS;
+const fmt = v => (v < 0 ? '−' : v > 0 ? '+' : '') + '$' + Math.abs(v).toLocaleString('en-US');
+const tbl = document.getElementById('hm');
+const th = document.createElement('thead'), hr = document.createElement('tr');
+hr.innerHTML = '<th class="rl"></th><th class="rm">mNAV ↓ / ENA →</th>' + MOVES.map(m => '<th>' + (m > 0 ? '+' : m < 0 ? '−' : '') + Math.abs(Math.round(m * 100)) + '%</th>').join('');
+th.appendChild(hr); tbl.appendChild(th);
+const tb = document.createElement('tbody');
+G.forEach(r => {
+  const tr = document.createElement('tr'); if (r.l === 'Entry') tr.className = 'entry';
+  const l = document.createElement('th'); l.className = 'rl'; l.textContent = r.l; tr.appendChild(l);
+  const m = document.createElement('th'); m.className = 'rm'; m.textContent = r.m.toFixed(r.l === 'Entry' ? 3 : 2) + 'x'; tr.appendChild(m);
+  r.v.forEach(v => {
+    const td = document.createElement('td');
+    const k = Math.round(10 + 60 * Math.sqrt(Math.min(1, Math.abs(v) / VMAX)));
+    td.style.background = Math.abs(v) < 1 ? 'transparent' : 'color-mix(in srgb, ' + (v > 0 ? 'var(--pos)' : 'var(--neg)') + ' ' + k + '%, var(--bg))';
+    td.textContent = Math.abs(v) < 1 ? '$0' : fmt(v);
+    tr.appendChild(td);
   });
-}
-new ResizeObserver(() => requestAnimationFrame(drawSc)).observe(document.getElementById('sc'));
-drawSc();
-'''.replace("SCDATA", json.dumps(sdata))
-    tab = [[s["name"], f"{s['mnav']:.3f}x", s["date"] or "", f"{s['ret']*100:+.1f}%", money(s["pnl"])] for s in sc]
+  tb.appendChild(tr);
+});
+tbl.appendChild(tb);
+""".replace("GRID", json.dumps(grid)).replace("MOVESJS", json.dumps(moves)).replace("VMAXJS", str(vmax))
+    tab = [[f"{g['m']:.3f}x" + (f" ({g['l']})" if g['l'] else "")] + [money(x) for x in g["v"]] for g in grid]
     (OUT / "usde-scenarios.html").write_text(page("USDE Trade Scenarios", body, dict(d=[]), script,
-        ["Scenario", "Exit mNAV", "Date seen", "Return on long", f"P&amp;L on {short_usd(N['long'])}"], tab))
+        ["Exit mNAV"] + [f"ENA {e*100:+.0f}%" for e in moves], tab))
 
 
 if __name__ == "__main__":

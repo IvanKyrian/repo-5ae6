@@ -71,18 +71,43 @@ th { position: sticky; top: 0; background: var(--bg); color: var(--ink); font-we
 
 <div class="wrap" id="root">
 <header>
-  <h1>USDE trade: P&amp;L by exit mNAV</h1>
-  <p class="sub">Entry at today's 0.30x. $1M long USDE, $1M short ENA. ENA price flat, before funding and costs. Exit levels come from the mNAV history since listing.</p>
+  <h1>USDE trade: P&amp;L by mNAV and ENA price</h1>
+  <p class="sub">Net P&amp;L on $1M long USDE and $1M short ENA, entering at 0.295x (USDE $4.35, ENA $0.1169). Rows: mNAV at exit. Columns: ENA price move. No rebalancing, before fees and funding.</p>
 </header>
-<div class="plot" id="sc"></div>
-<p class="foot">Return on the long = exit mNAV ÷ entry mNAV − 1. The ENA short hedges the token price, so with equal dollars on each side what is left is the change in the multiple. If ENA moves, the result scales by (1 + ENA move). Funding on the short adds about 12% a year on $1M at the average rate since listing.</p>
-<details><summary>Show data table</summary><div class="tablewrap"><table><thead><tr><th>Scenario</th><th>Exit mNAV</th><th>Date seen</th><th>Return on long</th><th>P&amp;L on $1M</th></tr></thead><tbody>
-<tr><td>Historical max</td><td>0.522x</td><td>2026-09-25</td><td>+75.6%</td><td>+$756,472</td></tr>
-<tr><td>Historical average</td><td>0.332x</td><td></td><td>+11.7%</td><td>+$117,467</td></tr>
-<tr><td>Today (entry)</td><td>0.297x</td><td>2026-11-16</td><td>+0.0%</td><td>$0</td></tr>
-<tr><td>Historical min</td><td>0.130x</td><td>2026-07-24</td><td>-56.2%</td><td>−$561,715</td></tr>
-<tr><td>Half the historical min</td><td>0.065x</td><td></td><td>-78.1%</td><td>−$780,858</td></tr>
-<tr><td>Zero</td><td>0.000x</td><td></td><td>-100.0%</td><td>−$1,000,000</td></tr>
+<div class="bar"><div class="legend">
+  <span><i class="sq" style="background:var(--pos)"></i>We make money</span>
+  <span><i class="sq" style="background:var(--neg)"></i>We lose money</span>
+  <span>Darker = bigger</span>
+</div></div>
+<div class="hm-wrap"><table class="hm" id="hm"></table></div>
+<p class="foot">Net P&amp;L = long × [(1 + ENA move) × exit mNAV ÷ entry mNAV − 1] − short × ENA move. The mNAV decides whether we make or lose money; ENA's move only changes how much. Max, Avg and Min are the mNAV's highest, average and lowest daily close since the 26 Jun 2026 listing. Above $11.50 per share the warrants dilute, so the top rows overstate the gains.</p>
+<style>
+.hm-wrap { overflow-x: auto; }
+.hm { border-collapse: separate; border-spacing: 2px; width: 100%; min-width: 560px; font-variant-numeric: tabular-nums; font-size: 12px; }
+.hm th, .hm td { padding: 6px 8px; text-align: right; white-space: nowrap; border: 0; position: static; }
+.hm thead th { color: var(--ink-2); font-weight: 600; background: transparent; }
+.hm th.rl { text-align: left; color: var(--muted); font-weight: 500; width: 1%; }
+.hm th.rm { color: var(--ink); font-weight: 600; text-align: right; width: 1%; }
+.hm td { border-radius: 3px; color: var(--ink); }
+.hm tr.entry th, .hm tr.entry td { font-weight: 700; }
+.hm tr.entry td { outline: 1.5px solid var(--ink-2); outline-offset: -1.5px; }
+</style>
+<details><summary>Show data table</summary><div class="tablewrap"><table><thead><tr><th>Exit mNAV</th><th>ENA -90%</th><th>ENA -50%</th><th>ENA -25%</th><th>ENA +0%</th><th>ENA +25%</th><th>ENA +50%</th><th>ENA +100%</th></tr></thead><tbody>
+<tr><td>1.000x</td><td>+$239,018</td><td>+$1,195,091</td><td>+$1,792,637</td><td>+$2,390,182</td><td>+$2,987,728</td><td>+$3,585,273</td><td>+$4,780,364</td></tr>
+<tr><td>0.900x</td><td>+$205,116</td><td>+$1,025,582</td><td>+$1,538,373</td><td>+$2,051,164</td><td>+$2,563,955</td><td>+$3,076,746</td><td>+$4,102,328</td></tr>
+<tr><td>0.800x</td><td>+$171,215</td><td>+$856,073</td><td>+$1,284,109</td><td>+$1,712,146</td><td>+$2,140,182</td><td>+$2,568,219</td><td>+$3,424,291</td></tr>
+<tr><td>0.700x</td><td>+$137,313</td><td>+$686,564</td><td>+$1,029,846</td><td>+$1,373,127</td><td>+$1,716,409</td><td>+$2,059,691</td><td>+$2,746,255</td></tr>
+<tr><td>0.600x</td><td>+$103,411</td><td>+$517,055</td><td>+$775,582</td><td>+$1,034,109</td><td>+$1,292,637</td><td>+$1,551,164</td><td>+$2,068,219</td></tr>
+<tr><td>0.520x (Max)</td><td>+$76,289</td><td>+$381,447</td><td>+$572,171</td><td>+$762,895</td><td>+$953,618</td><td>+$1,144,342</td><td>+$1,525,789</td></tr>
+<tr><td>0.500x</td><td>+$69,509</td><td>+$347,546</td><td>+$521,318</td><td>+$695,091</td><td>+$868,864</td><td>+$1,042,637</td><td>+$1,390,182</td></tr>
+<tr><td>0.400x</td><td>+$35,607</td><td>+$178,036</td><td>+$267,055</td><td>+$356,073</td><td>+$445,091</td><td>+$534,109</td><td>+$712,146</td></tr>
+<tr><td>0.330x (Avg)</td><td>+$11,876</td><td>+$59,380</td><td>+$89,070</td><td>+$118,760</td><td>+$148,450</td><td>+$178,140</td><td>+$237,520</td></tr>
+<tr><td>0.300x</td><td>+$1,705</td><td>+$8,527</td><td>+$12,791</td><td>+$17,055</td><td>+$21,318</td><td>+$25,582</td><td>+$34,109</td></tr>
+<tr><td>0.295x (Entry)</td><td>$0</td><td>$0</td><td>$0</td><td>$0</td><td>$0</td><td>$0</td><td>$0</td></tr>
+<tr><td>0.200x</td><td>−$32,196</td><td>−$160,982</td><td>−$241,473</td><td>−$321,964</td><td>−$402,454</td><td>−$482,945</td><td>−$643,927</td></tr>
+<tr><td>0.130x (Min)</td><td>−$55,928</td><td>−$279,638</td><td>−$419,457</td><td>−$559,276</td><td>−$699,095</td><td>−$838,914</td><td>−$1,118,553</td></tr>
+<tr><td>0.100x</td><td>−$66,098</td><td>−$330,491</td><td>−$495,736</td><td>−$660,982</td><td>−$826,227</td><td>−$991,473</td><td>−$1,321,964</td></tr>
+<tr><td>0.000x</td><td>−$100,000</td><td>−$500,000</td><td>−$750,000</td><td>−$1,000,000</td><td>−$1,250,000</td><td>−$1,500,000</td><td>−$2,000,000</td></tr>
 </tbody></table></div></details>
 </div>
 <script>
@@ -267,33 +292,26 @@ const DATES = DATA.d.map(s => new Date(s + 'T00:00:00Z'));
 const pct = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
 const usd = v => (v < 0 ? '\u2212' : v > 0 ? '+' : '') + '$' + Math.abs(Math.round(v)).toLocaleString('en-US');
 
-const SC = [{"n": "Historical max", "m": 0.522, "d": "2026-09-25", "r": 75.6, "p": 756472}, {"n": "Historical average", "m": 0.332, "d": null, "r": 11.7, "p": 117467}, {"n": "Historical min", "m": 0.13, "d": "2026-07-24", "r": -56.2, "p": -561715}, {"n": "Half the historical min", "m": 0.065, "d": null, "r": -78.1, "p": -780858}, {"n": "Zero", "m": 0.0, "d": null, "r": -100.0, "p": -1000000}];
-function drawSc() {
-  const host = document.getElementById('sc'); host.replaceChildren();
-  const NS = 'http://www.w3.org/2000/svg';
-  const W = Math.max(300, host.clientWidth), narrow = W < 560;
-  const labW = narrow ? 112 : 190, valW = narrow ? 92 : 150, rowH = 44, top = 8;
-  const H = top + SC.length * rowH + 8;
-  const svg = document.createElementNS(NS, 'svg');
-  svg.setAttribute('width', W); svg.setAttribute('height', H); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
-  svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'P&L by exit mNAV scenario');
-  host.appendChild(svg);
-  const lo = Math.min(...SC.map(s => s.r), 0), hi = Math.max(...SC.map(s => s.r), 0);
-  const x0 = labW, x1 = W - valW, X = v => x0 + (v - lo) / (hi - lo) * (x1 - x0);
-  const mk = (tag, a, st) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (st) Object.assign(e.style, st); svg.appendChild(e); return e; };
-  const tx = (x, y, s, cls, anchor) => { const t = mk('text', { x, y, class: cls, 'text-anchor': anchor || 'start' }); t.textContent = s; return t; };
-  mk('line', { x1: X(0), x2: X(0), y1: top - 4, y2: H - 4 }, { stroke: 'var(--axis)', strokeWidth: 1 });
-  SC.forEach((s, i) => {
-    const y = top + i * rowH, cy = y + rowH / 2;
-    tx(0, cy - 3, s.n, 'plabel');
-    tx(0, cy + 12, s.m.toFixed(2) + 'x' + (s.d ? ' · ' + (d => d.getUTCDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()])(new Date(s.d + 'T00:00:00Z')) : ''), 'tick');
-    const a = X(Math.min(0, s.r)), b = X(Math.max(0, s.r));
-    mk('rect', { x: a, y: cy - 9, width: Math.max(1, b - a), height: 18, rx: 2 }, { fill: s.r >= 0 ? 'var(--pos)' : 'var(--neg)' });
-    tx(W, cy - 3, usd(s.p), 'note strong', 'end');
-    tx(W, cy + 12, pct(s.r) + ' on the long', 'tick', 'end');
+const G = [{"m": 1.0, "l": "", "v": [239018, 1195091, 1792637, 2390182, 2987728, 3585273, 4780364]}, {"m": 0.9, "l": "", "v": [205116, 1025582, 1538373, 2051164, 2563955, 3076746, 4102328]}, {"m": 0.8, "l": "", "v": [171215, 856073, 1284109, 1712146, 2140182, 2568219, 3424291]}, {"m": 0.7, "l": "", "v": [137313, 686564, 1029846, 1373127, 1716409, 2059691, 2746255]}, {"m": 0.6, "l": "", "v": [103411, 517055, 775582, 1034109, 1292637, 1551164, 2068219]}, {"m": 0.52, "l": "Max", "v": [76289, 381447, 572171, 762895, 953618, 1144342, 1525789]}, {"m": 0.5, "l": "", "v": [69509, 347546, 521318, 695091, 868864, 1042637, 1390182]}, {"m": 0.4, "l": "", "v": [35607, 178036, 267055, 356073, 445091, 534109, 712146]}, {"m": 0.33, "l": "Avg", "v": [11876, 59380, 89070, 118760, 148450, 178140, 237520]}, {"m": 0.3, "l": "", "v": [1705, 8527, 12791, 17055, 21318, 25582, 34109]}, {"m": 0.294969406207288, "l": "Entry", "v": [0, 0, 0, 0, 0, 0, 0]}, {"m": 0.2, "l": "", "v": [-32196, -160982, -241473, -321964, -402454, -482945, -643927]}, {"m": 0.13, "l": "Min", "v": [-55928, -279638, -419457, -559276, -699095, -838914, -1118553]}, {"m": 0.1, "l": "", "v": [-66098, -330491, -495736, -660982, -826227, -991473, -1321964]}, {"m": 0.0, "l": "", "v": [-100000, -500000, -750000, -1000000, -1250000, -1500000, -2000000]}], MOVES = [-0.9, -0.5, -0.25, 0, 0.25, 0.5, 1.0], VMAX = 4780364;
+const fmt = v => (v < 0 ? '−' : v > 0 ? '+' : '') + '$' + Math.abs(v).toLocaleString('en-US');
+const tbl = document.getElementById('hm');
+const th = document.createElement('thead'), hr = document.createElement('tr');
+hr.innerHTML = '<th class="rl"></th><th class="rm">mNAV ↓ / ENA →</th>' + MOVES.map(m => '<th>' + (m > 0 ? '+' : m < 0 ? '−' : '') + Math.abs(Math.round(m * 100)) + '%</th>').join('');
+th.appendChild(hr); tbl.appendChild(th);
+const tb = document.createElement('tbody');
+G.forEach(r => {
+  const tr = document.createElement('tr'); if (r.l === 'Entry') tr.className = 'entry';
+  const l = document.createElement('th'); l.className = 'rl'; l.textContent = r.l; tr.appendChild(l);
+  const m = document.createElement('th'); m.className = 'rm'; m.textContent = r.m.toFixed(r.l === 'Entry' ? 3 : 2) + 'x'; tr.appendChild(m);
+  r.v.forEach(v => {
+    const td = document.createElement('td');
+    const k = Math.round(10 + 60 * Math.sqrt(Math.min(1, Math.abs(v) / VMAX)));
+    td.style.background = Math.abs(v) < 1 ? 'transparent' : 'color-mix(in srgb, ' + (v > 0 ? 'var(--pos)' : 'var(--neg)') + ' ' + k + '%, var(--bg))';
+    td.textContent = Math.abs(v) < 1 ? '$0' : fmt(v);
+    tr.appendChild(td);
   });
-}
-new ResizeObserver(() => requestAnimationFrame(drawSc)).observe(document.getElementById('sc'));
-drawSc();
+  tb.appendChild(tr);
+});
+tbl.appendChild(tb);
 
 </script>
