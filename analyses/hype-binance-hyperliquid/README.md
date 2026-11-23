@@ -1,7 +1,7 @@
 # HYPE funding arb: long Binance, short Hyperliquid (Nov 2026)
 
 - `report.md`: write-up (Notion format), $1M notional, $500k per leg, 5×.
-- `hype_daily.csv`: input from the server session (funding from Grafana's matview, perp closes from the venue APIs).
+- `hype_daily.csv`: 5 Nov 2025 – 22 Nov 2026. Funding from Grafana (28 Jan – 2 Feb filled from the Binance API), perp closes from the venue APIs.
 - `charts/`. Live: growth https://claude.ai/artifact/BHM9AfozCK9RLhatgEKVyS · funding https://claude.ai/artifact/4XC4rVQmRC675tjuGh1Nic · prices https://claude.ai/artifact/WJfVjFVfbMfLZVUdWKo77i
 
 ```bash

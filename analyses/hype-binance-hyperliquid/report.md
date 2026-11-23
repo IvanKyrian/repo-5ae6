@@ -1,14 +1,14 @@
-# HYPE Funding Rate Arb (Long Binance - Short Hyperliquid)
+# HYPE Funding Arb (Long Binance ; Short Hyperliquid)
 
-**Date: 4 Nov 2026**
+**Date: 23 November 2026**
 
-**Strategy category: Funding Rate Arbitrage**
+**Strategy category: Funding Arb**
 
-**Expected Yield Range: [TBD]**
+**Expected Yield Range: 15-25%**
 
-**Protocol exposure: Binance, Hyperliquid**
+**Protocol exposure: Hyperliquid, Binance**
 
-**Size: TBD**
+**Size: tbc**
 
 ---
 
@@ -16,14 +16,18 @@
 
 Long HYPE perp on Binance, short HYPE perp on Hyperliquid, and capture the funding spread. The price exposure cancels out, so what's left is the difference in funding between the two venues.
 
-Over the full data series, 5 Nov 2025 – 4 Nov 2026 (359 days of data; 6 days missing, 28 Jan – 2 Feb; the last 12 months of Grafana data), the spread averaged **4.33% annualized**.
+Over the full data series, 5 Nov 2025 – 22 Nov 2026 (383 days of data; the last 12 months of Grafana data plus the update to 22 Nov), the spread averaged **4.23% annualized**.
 
-At 5× leverage per leg we multiply the spread by 2.5, because $500k of notional per leg earns the spread on $200k of total margin. That gives a **10.8% APR**.
+At 5× leverage per leg we multiply the spread by 2.5, because $500k of notional per leg earns the spread on $200k of total margin. That gives a **10.6% APR**.
 
-**Sizing**
+**Sizing tbc**
 
 - $1M total notional: $500k per leg
 - 5× leverage on each leg: $100k margin on Binance and $100k on Hyperliquid, $200k in total
+
+Binance Market OI: $263m
+
+Hyperliquid Market OI: $1,161m. Current exposure is $2.05m (0.18%) and the OI limit is 2.22% ($25.8m), so we could add around $23.7m.
 
 **Assumptions**
 
@@ -34,31 +38,31 @@ At 5× leverage per leg we multiply the spread by 2.5, because $500k of notional
 - Daily M2M = HYPE held per leg × change in the $ price gap between Binance and Hyperliquid. Both legs hold the same amount of HYPE, sized to $500k at the previous close.
 - Days are UTC. Annualized = daily × 365. No compounding, before trading fees.
 
-**Do we know what causes the spread, or have reason to believe it will persist?** No. Our theory is that it comes from how funding is calculated and settled: Binance settles every 4 hours and Hyperliquid every hour, and each venue measures the premium against a different reference price (section 3). Hyperliquid's funding has been higher than Binance's on 71% of days, and the 30-day average spread was positive 99.7% of the time. This is a theory, not empirical evidence, and it doesn't explain why the spread would persist.
+**Do we know what causes the spread, or have reason to believe it will persist?** No. Our theory is that it comes from how funding is calculated and settled: Binance settles every 4 hours and Hyperliquid every hour, and each venue measures the premium against a different reference price. Hyperliquid's funding has been higher than Binance's on 70% of days, and the 30-day average spread was positive 99.7% of the time. This is a theory, not empirical evidence, and it doesn't explain why the spread would persist.
 
 📈 Growth chart: https://claude.ai/artifact/BHM9AfozCK9RLhatgEKVyS
 
-The chart shows how $100 would have grown in the strategy since 5 Nov, funding only: $100 → $110.64.
+The chart shows how $100 would have grown in the strategy since 5 Nov, funding only: $100 → $111.08.
 
-#### **1. Historical funding spread**
+#### **1. HYPE Historical funding spread**
 
-*Method:* daily spread = Hyperliquid daily funding − Binance daily funding, with every settlement in the day summed and then annualized (×365). Implied APR = spread × 2.5. All periods end 4 Nov 2026.
+*Method:* daily spread = Hyperliquid daily funding − Binance daily funding, with every settlement in the day summed and then annualized (×365). Implied APR = spread × 2.5. All periods end 22 Nov 2026.
 
 | **Period** | **Avg funding spread (annualized)** | **Implied APR at 5×** |
 | --- | --- | --- |
-| 7 days | 13.43% | 33.6% |
-| 30 days | 5.27% | 13.2% |
-| 90 days | 3.85% | 9.6% |
-| 180 days | 5.26% | 13.2% |
-| Max track record (359 days) | 4.33% | 10.8% |
+| 7 days | 3.79% | 9.5% |
+| 30 days | 3.63% | 9.1% |
+| 90 days | 3.13% | 7.8% |
+| 180 days | 4.37% | 10.9% |
+| Max track record (383 days) | 4.23% | 10.6% |
 
 **Daily behavior**
 
 | **Spread** | **Days** | **Share** |
 | --- | --- | --- |
-| Positive | 255 | 71.0% |
-| Zero (both venues at the base rate) | 19 | 5.3% |
-| Negative | 85 | 23.7% |
+| Positive | 270 | 70.5% |
+| Zero (both venues at the base rate) | 21 | 5.5% |
+| Negative | 92 | 24.0% |
 
 **Worst cases**
 
@@ -71,9 +75,9 @@ The worst funding drawdown is the biggest drop in cumulative funding P&L from a 
 
 📈 Funding chart: https://claude.ai/artifact/4XC4rVQmRC675tjuGh1Nic
 
-In every period in the table above (the last 7, 30, 90 and 180 days, and the full 359 days), Hyperliquid's average funding rate was higher than Binance's, so the average spread was positive. The spread moves around, from 5.3% over the last 30 days to 13.4% over the last 7. About 24% of days are negative; the worst stretch cost $935 (0.09% of notional) and was made back within 17 days.
+In every period in the table above (the last 7, 30, 90 and 180 days, and the full 383 days), Hyperliquid's average funding rate was higher than Binance's, so the average spread was positive. The spread moves around, from 3.6% over the last 30 days to 3.8% over the last 7. About 24% of days are negative, but those days are cheap: the worst stretch cost $935 (0.09% of notional) and was made back within 17 days.
 
-#### **2. Mark-to-market risk**
+#### **Mark-to-market risk**
 
 **What it is:** we're long and short the same perp on two venues, so the M2M risk is the price gap between them. If both prices move the same, M2M is zero. Funding is not included. In practice it doesn't affect the trade profitability, because the gap closes quickly.
 
@@ -85,24 +89,11 @@ In every period in the table above (the last 7, 30, 90 and 180 days, and the ful
 
 📈 Price chart: https://claude.ai/artifact/WJfVjFVfbMfLZVUdWKo77i
 
-Across the period, the gap between venues averaged 0.7 bps (Binance slightly above), stayed within ±10 bps on 92% of days and never went past 22.0 bps. It doesn't persist: a gap that opens one day mostly closes the next.
+Across the period, the gap between venues averaged 1.1 bps (Binance slightly above), stayed within ±10 bps on 90% of days and never went past 22.0 bps. It doesn't persist: a gap that opens one day mostly closes the next.
 
 Through a −50% price crash and a +105% price rally the gap stayed under 23 bps, and the worst day cost $823 (0.08% of notional).
 
-> **HYPE volatility:** the daily price moved more than 15% twice in the period: +23.5% on 27 Jan and +19.3% on 19 Aug. The biggest daily drop was −13.6% on 4 Jun. The hedge cancels this across the two legs, but each leg is margined on its own venue, so at 5× (20% margin) collateral has to be moved to the losing leg on days like these.
-
-#### **3. Oracles, contract specs and correlation**
-
-Neither the oracles nor the contract specs are the same:
-
-- **Oracle:** Binance's HYPE index is [constituents + weights from Binance's References tab]. Hyperliquid's oracle is [venues].
-- **Contract spec:** Binance averages the premium over 4h, Hyperliquid over 1h. Binance is USDT-margined, Hyperliquid is USDC.
-
-Funding on each venue is its perp price vs its own oracle, and both inputs differ: each perp price is set by its own order book, and each oracle is built from different venues.
-
-The relationship is weak and doesn't have the expected sign: correlation is 0.09 daily, 0.05 on 7-day averages and 0.33 on 30-day averages. If the spread came from Hyperliquid's perp trading above Binance's, the correlation would be negative. So the spread is more likely coming from how each venue measures its premium (the oracles above) than from the perp-vs-perp price gap.
-
-#### **4. Spreads during Bear vs Bull periods**
+#### **3. Spreads during Bear vs Bull periods**
 
 |  | **Bear: 7 Nov – 20 Jan** | **Bull: 2 Apr – 31 May** |
 | --- | --- | --- |
@@ -120,4 +111,4 @@ The strategy does slightly better in the bull period. The spread averaged 4.46% 
 
 #### **Conclusion**
 
-I don't know why Hyperliquid funding runs above Binance, but the spread has been consistent: positive in every period we looked at, averaging 4.33% annualized over the full track record, which is 10.8% APR at 5×. Negative stretches are short and cheap, and M2M between the venues is small. The carry is real but modest, less than half of XMR's. [Recommendation]
+The spread has been consistent: positive in every period we looked at, averaging 4.23% annualized over the full track record, which is 10.6% APR at 5×. Negative stretches are short and cheap, and M2M between the venues is small. The carry is real but modest, less than half of XMR's.
