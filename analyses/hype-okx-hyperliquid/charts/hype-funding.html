@@ -1,0 +1,465 @@
+<title>HYPE OKX Funding Spread</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one compact chart card sized for a Notion embed; header, legend row, plot, table toggle. */
+:root {
+  --bg: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --band: rgba(11, 11, 11, 0.055); --line: rgba(11, 11, 11, 0.10);
+  --s-bin: #2a78d6; --s-hl: #eb6834; --pos: #1baf7a; --neg: #e34948; --s-strat: #2a78d6;
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --band: rgba(255, 255, 255, 0.06); --line: rgba(255, 255, 255, 0.10);
+    --s-bin: #3987e5; --s-hl: #d95926; --pos: #199e70; --neg: #e66767; --s-strat: #3987e5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --band: rgba(255, 255, 255, 0.06); --line: rgba(255, 255, 255, 0.10);
+  --s-bin: #3987e5; --s-hl: #d95926; --pos: #199e70; --neg: #e66767; --s-strat: #3987e5;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--font); }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 18px 20px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 14px; }
+h1 { font-size: 17px; font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.005em; }
+.sub { margin: 4px 0 0; color: var(--ink-2); font-size: 13px; line-height: 1.45; max-width: 70ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.stat { display: grid; gap: 2px; min-width: 0; }
+.stat span { font-size: 11px; color: var(--muted); letter-spacing: 0.02em; }
+.stat b { font-size: 18px; font-weight: 600; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.lk { width: 16px; height: 2px; border-radius: 1px; display: inline-block; }
+.lk.thick { height: 6px; border-radius: 3px; opacity: 0.4; }
+.sq { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; padding: 2px; gap: 2px; }
+.seg button { font: inherit; font-size: 12px; border: 0; background: transparent; color: var(--ink-2); padding: 4px 10px; border-radius: 5px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.seg button:focus-visible, svg:focus-visible, summary:focus-visible { outline: 2px solid var(--s-bin); outline-offset: 2px; }
+.plot { position: relative; min-width: 0; }
+.plot svg { display: block; overflow: visible; touch-action: pan-y; }
+.tick { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.plabel { font-size: 12px; fill: var(--ink-2); font-weight: 500; }
+.note { font-size: 11px; fill: var(--ink-2); }
+.note.strong { fill: var(--ink); font-weight: 600; }
+.tip { position: absolute; pointer-events: none; background: var(--bg); border: 1px solid var(--line);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); border-radius: 8px; padding: 8px 10px; font-size: 12px;
+  display: grid; gap: 4px; min-width: 170px; z-index: 2; }
+.tip-date { font-size: 11px; color: var(--muted); }
+.tip-row { display: grid; grid-template-columns: 14px auto 1fr; align-items: center; gap: 6px; }
+.tip-row.sep { border-top: 1px solid var(--line); padding-top: 4px; margin-top: 2px; }
+.tip-row strong { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip-label { color: var(--ink-2); }
+.key { width: 12px; height: 2px; border-radius: 1px; }
+.key.blank { background: transparent; }
+.foot { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: 0; max-width: 90ch; }
+details { font-size: 12px; color: var(--ink-2); }
+summary { cursor: pointer; width: fit-content; }
+.tablewrap { overflow: auto; max-height: 320px; margin-top: 8px; border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 4px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+th { position: sticky; top: 0; background: var(--bg); color: var(--ink); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap" id="root">
+<header>
+  <h1>HYPE funding: OKX vs Hyperliquid</h1>
+  <p class="sub">Daily funding on each venue, annualized. The spread is what we earn short on Hyperliquid and long on OKX: Hyperliquid rate minus OKX rate. 24 Jun – 22 Nov 2026.</p>
+</header>
+<div class="stats">
+  <div class="stat"><span>Avg spread, annualized</span><b>5.18%</b></div>
+  <div class="stat"><span>APR at 5× (×2.5)</span><b>13.0%</b></div>
+  <div class="stat"><span>Days spread was positive</span><b>127 of 152</b></div>
+  <div class="stat"><span>Funding earned, $1M notional</span><b>$10,790</b></div>
+</div>
+<div class="bar">
+  <div class="legend">
+    <span><i class="lk" style="background:var(--s-hl)"></i>Hyperliquid</span>
+    <span><i class="lk" style="background:var(--s-bin)"></i>OKX</span>
+    <span><i class="sq" style="background:var(--pos)"></i>Spread &gt; 0, we earn</span>
+    <span><i class="sq" style="background:var(--neg)"></i>Spread &lt; 0, we pay</span>
+    <span><i class="lk" style="background:var(--ink-2);opacity:.55"></i>Worst single day</span>
+    <span><i class="sq" style="background:var(--band);outline:1px solid var(--line)"></i>Worst funding drawdown</span>
+  </div>
+  <div class="seg" role="group" aria-label="Smoothing">
+    <button type="button" id="m7" aria-pressed="true">7-day avg</button>
+    <button type="button" id="m1" aria-pressed="false">Daily</button>
+  </div>
+</div>
+<div class="plot"><div class="tip" hidden></div></div>
+<p class="foot">Hyperliquid settles every hour; each day sums all settlements, then ×365. 7-day avg is trailing. 3 days had zero spread and 22 were negative. P&amp;L on $1M notional, $500k per leg. Worst single day: 15 Nov, −9.6% annualized, −$132. Worst funding drawdown: 5–10 Aug, −$207, made back by 14 Aug. Source: Grafana (bishop_daily_funding_rate_history_materialized).</p>
+<details><summary>Show data table</summary><div class="tablewrap"><table><thead><tr><th>Date</th><th>OKX (ann.)</th><th>Hyperliquid (ann.)</th><th>Spread (ann.)</th><th>Funding P&amp;L</th></tr></thead><tbody>
+<tr><td>2026-06-24</td><td>3.7%</td><td>12.9%</td><td>9.2%</td><td>$126</td></tr>
+<tr><td>2026-06-25</td><td>−4.2%</td><td>10.5%</td><td>14.7%</td><td>$201</td></tr>
+<tr><td>2026-06-26</td><td>1.2%</td><td>10.9%</td><td>9.7%</td><td>$133</td></tr>
+<tr><td>2026-06-27</td><td>−2.2%</td><td>10.5%</td><td>12.7%</td><td>$174</td></tr>
+<tr><td>2026-06-28</td><td>5.9%</td><td>10.9%</td><td>5.0%</td><td>$69</td></tr>
+<tr><td>2026-06-29</td><td>10.9%</td><td>11.8%</td><td>0.9%</td><td>$12</td></tr>
+<tr><td>2026-06-30</td><td>3.4%</td><td>10.9%</td><td>7.5%</td><td>$103</td></tr>
+<tr><td>2026-07-01</td><td>5.3%</td><td>7.6%</td><td>2.3%</td><td>$31</td></tr>
+<tr><td>2026-07-02</td><td>−3.5%</td><td>10.2%</td><td>13.8%</td><td>$189</td></tr>
+<tr><td>2026-07-03</td><td>7.5%</td><td>10.6%</td><td>3.1%</td><td>$42</td></tr>
+<tr><td>2026-07-04</td><td>3.6%</td><td>10.9%</td><td>7.4%</td><td>$101</td></tr>
+<tr><td>2026-07-05</td><td>6.0%</td><td>10.3%</td><td>4.3%</td><td>$58</td></tr>
+<tr><td>2026-07-06</td><td>6.5%</td><td>10.9%</td><td>4.5%</td><td>$61</td></tr>
+<tr><td>2026-07-07</td><td>−6.8%</td><td>10.9%</td><td>17.7%</td><td>$242</td></tr>
+<tr><td>2026-07-08</td><td>8.8%</td><td>11.2%</td><td>2.4%</td><td>$33</td></tr>
+<tr><td>2026-07-09</td><td>3.6%</td><td>9.0%</td><td>5.4%</td><td>$74</td></tr>
+<tr><td>2026-07-10</td><td>−1.0%</td><td>6.2%</td><td>7.1%</td><td>$98</td></tr>
+<tr><td>2026-07-11</td><td>2.7%</td><td>6.7%</td><td>4.0%</td><td>$54</td></tr>
+<tr><td>2026-07-12</td><td>6.0%</td><td>7.4%</td><td>1.5%</td><td>$20</td></tr>
+<tr><td>2026-07-13</td><td>4.4%</td><td>8.9%</td><td>4.6%</td><td>$63</td></tr>
+<tr><td>2026-07-14</td><td>10.9%</td><td>11.4%</td><td>0.5%</td><td>$7</td></tr>
+<tr><td>2026-07-15</td><td>10.9%</td><td>17.8%</td><td>6.9%</td><td>$94</td></tr>
+<tr><td>2026-07-16</td><td>10.9%</td><td>10.2%</td><td>−0.8%</td><td>−$11</td></tr>
+<tr><td>2026-07-17</td><td>0.3%</td><td>9.0%</td><td>8.8%</td><td>$120</td></tr>
+<tr><td>2026-07-18</td><td>10.9%</td><td>10.9%</td><td>0.0%</td><td>$0</td></tr>
+<tr><td>2026-07-19</td><td>−4.3%</td><td>10.1%</td><td>14.3%</td><td>$196</td></tr>
+<tr><td>2026-07-20</td><td>−1.0%</td><td>8.8%</td><td>9.8%</td><td>$134</td></tr>
+<tr><td>2026-07-21</td><td>3.9%</td><td>7.2%</td><td>3.3%</td><td>$45</td></tr>
+<tr><td>2026-07-22</td><td>−4.7%</td><td>6.4%</td><td>11.1%</td><td>$152</td></tr>
+<tr><td>2026-07-23</td><td>3.8%</td><td>10.2%</td><td>6.4%</td><td>$88</td></tr>
+<tr><td>2026-07-24</td><td>7.3%</td><td>9.4%</td><td>2.1%</td><td>$29</td></tr>
+<tr><td>2026-07-25</td><td>0.7%</td><td>9.2%</td><td>8.4%</td><td>$115</td></tr>
+<tr><td>2026-07-26</td><td>−3.7%</td><td>2.8%</td><td>6.5%</td><td>$89</td></tr>
+<tr><td>2026-07-27</td><td>3.9%</td><td>10.9%</td><td>7.0%</td><td>$96</td></tr>
+<tr><td>2026-07-28</td><td>8.8%</td><td>10.9%</td><td>2.2%</td><td>$30</td></tr>
+<tr><td>2026-07-29</td><td>4.1%</td><td>9.0%</td><td>4.8%</td><td>$66</td></tr>
+<tr><td>2026-07-30</td><td>4.7%</td><td>8.8%</td><td>4.2%</td><td>$57</td></tr>
+<tr><td>2026-07-31</td><td>0.4%</td><td>7.1%</td><td>6.7%</td><td>$92</td></tr>
+<tr><td>2026-08-01</td><td>10.9%</td><td>10.9%</td><td>−0.1%</td><td>−$1</td></tr>
+<tr><td>2026-08-02</td><td>10.9%</td><td>8.6%</td><td>−2.3%</td><td>−$32</td></tr>
+<tr><td>2026-08-03</td><td>8.7%</td><td>9.1%</td><td>0.4%</td><td>$5</td></tr>
+<tr><td>2026-08-04</td><td>4.5%</td><td>10.1%</td><td>5.6%</td><td>$77</td></tr>
+<tr><td>2026-08-05</td><td>6.7%</td><td>1.9%</td><td>−4.8%</td><td>−$66</td></tr>
+<tr><td>2026-08-06</td><td>5.9%</td><td>7.1%</td><td>1.3%</td><td>$17</td></tr>
+<tr><td>2026-08-07</td><td>8.9%</td><td>6.7%</td><td>−2.1%</td><td>−$29</td></tr>
+<tr><td>2026-08-08</td><td>8.5%</td><td>4.9%</td><td>−3.6%</td><td>−$50</td></tr>
+<tr><td>2026-08-09</td><td>7.3%</td><td>5.3%</td><td>−1.9%</td><td>−$27</td></tr>
+<tr><td>2026-08-10</td><td>10.4%</td><td>6.6%</td><td>−3.8%</td><td>−$52</td></tr>
+<tr><td>2026-08-11</td><td>9.2%</td><td>10.9%</td><td>1.8%</td><td>$25</td></tr>
+<tr><td>2026-08-12</td><td>9.9%</td><td>10.9%</td><td>1.1%</td><td>$15</td></tr>
+<tr><td>2026-08-13</td><td>3.6%</td><td>10.8%</td><td>7.2%</td><td>$99</td></tr>
+<tr><td>2026-08-14</td><td>−2.9%</td><td>9.1%</td><td>12.0%</td><td>$164</td></tr>
+<tr><td>2026-08-15</td><td>4.7%</td><td>10.9%</td><td>6.2%</td><td>$85</td></tr>
+<tr><td>2026-08-16</td><td>6.8%</td><td>10.8%</td><td>4.0%</td><td>$54</td></tr>
+<tr><td>2026-08-17</td><td>5.9%</td><td>10.5%</td><td>4.6%</td><td>$63</td></tr>
+<tr><td>2026-08-18</td><td>−0.9%</td><td>6.0%</td><td>7.0%</td><td>$95</td></tr>
+<tr><td>2026-08-19</td><td>−8.4%</td><td>20.2%</td><td>28.6%</td><td>$391</td></tr>
+<tr><td>2026-08-20</td><td>10.9%</td><td>22.8%</td><td>11.8%</td><td>$162</td></tr>
+<tr><td>2026-08-21</td><td>14.9%</td><td>35.3%</td><td>20.5%</td><td>$280</td></tr>
+<tr><td>2026-08-22</td><td>18.0%</td><td>31.9%</td><td>13.9%</td><td>$190</td></tr>
+<tr><td>2026-08-23</td><td>10.9%</td><td>23.7%</td><td>12.8%</td><td>$175</td></tr>
+<tr><td>2026-08-24</td><td>10.9%</td><td>18.3%</td><td>7.4%</td><td>$101</td></tr>
+<tr><td>2026-08-25</td><td>10.9%</td><td>15.8%</td><td>4.9%</td><td>$67</td></tr>
+<tr><td>2026-08-26</td><td>7.0%</td><td>8.2%</td><td>1.2%</td><td>$16</td></tr>
+<tr><td>2026-08-27</td><td>5.3%</td><td>10.7%</td><td>5.5%</td><td>$75</td></tr>
+<tr><td>2026-08-28</td><td>6.8%</td><td>7.1%</td><td>0.3%</td><td>$4</td></tr>
+<tr><td>2026-08-29</td><td>1.0%</td><td>−1.7%</td><td>−2.7%</td><td>−$37</td></tr>
+<tr><td>2026-08-30</td><td>7.0%</td><td>10.5%</td><td>3.4%</td><td>$47</td></tr>
+<tr><td>2026-08-31</td><td>6.9%</td><td>10.3%</td><td>3.4%</td><td>$47</td></tr>
+<tr><td>2026-09-01</td><td>4.3%</td><td>10.4%</td><td>6.2%</td><td>$85</td></tr>
+<tr><td>2026-09-02</td><td>5.3%</td><td>6.2%</td><td>0.9%</td><td>$12</td></tr>
+<tr><td>2026-09-03</td><td>4.0%</td><td>4.7%</td><td>0.6%</td><td>$8</td></tr>
+<tr><td>2026-09-04</td><td>9.6%</td><td>10.9%</td><td>1.3%</td><td>$18</td></tr>
+<tr><td>2026-09-05</td><td>10.7%</td><td>10.8%</td><td>0.1%</td><td>$1</td></tr>
+<tr><td>2026-09-06</td><td>10.7%</td><td>10.2%</td><td>−0.5%</td><td>−$6</td></tr>
+<tr><td>2026-09-07</td><td>10.7%</td><td>10.9%</td><td>0.2%</td><td>$3</td></tr>
+<tr><td>2026-09-08</td><td>10.9%</td><td>7.6%</td><td>−3.4%</td><td>−$46</td></tr>
+<tr><td>2026-09-09</td><td>−9.0%</td><td>0.9%</td><td>9.9%</td><td>$136</td></tr>
+<tr><td>2026-09-10</td><td>6.2%</td><td>4.4%</td><td>−1.8%</td><td>−$25</td></tr>
+<tr><td>2026-09-11</td><td>2.3%</td><td>7.5%</td><td>5.2%</td><td>$71</td></tr>
+<tr><td>2026-09-12</td><td>0.8%</td><td>−0.3%</td><td>−1.2%</td><td>−$16</td></tr>
+<tr><td>2026-09-13</td><td>4.0%</td><td>4.0%</td><td>0.0%</td><td>$0</td></tr>
+<tr><td>2026-09-14</td><td>6.3%</td><td>7.5%</td><td>1.2%</td><td>$16</td></tr>
+<tr><td>2026-09-15</td><td>1.3%</td><td>5.6%</td><td>4.3%</td><td>$59</td></tr>
+<tr><td>2026-09-16</td><td>10.1%</td><td>10.7%</td><td>0.7%</td><td>$9</td></tr>
+<tr><td>2026-09-17</td><td>8.3%</td><td>15.8%</td><td>7.5%</td><td>$102</td></tr>
+<tr><td>2026-09-18</td><td>6.5%</td><td>14.2%</td><td>7.7%</td><td>$106</td></tr>
+<tr><td>2026-09-19</td><td>9.8%</td><td>11.1%</td><td>1.3%</td><td>$18</td></tr>
+<tr><td>2026-09-20</td><td>10.9%</td><td>10.9%</td><td>0.0%</td><td>$0</td></tr>
+<tr><td>2026-09-21</td><td>2.5%</td><td>30.0%</td><td>27.4%</td><td>$376</td></tr>
+<tr><td>2026-09-22</td><td>7.2%</td><td>11.2%</td><td>4.0%</td><td>$54</td></tr>
+<tr><td>2026-09-23</td><td>4.3%</td><td>11.1%</td><td>6.7%</td><td>$92</td></tr>
+<tr><td>2026-09-24</td><td>0.6%</td><td>9.6%</td><td>9.0%</td><td>$123</td></tr>
+<tr><td>2026-09-25</td><td>−0.4%</td><td>9.7%</td><td>10.1%</td><td>$138</td></tr>
+<tr><td>2026-09-26</td><td>2.8%</td><td>7.5%</td><td>4.7%</td><td>$64</td></tr>
+<tr><td>2026-09-27</td><td>6.3%</td><td>10.9%</td><td>4.6%</td><td>$63</td></tr>
+<tr><td>2026-09-28</td><td>1.1%</td><td>8.8%</td><td>7.7%</td><td>$105</td></tr>
+<tr><td>2026-09-29</td><td>10.1%</td><td>6.2%</td><td>−3.9%</td><td>−$54</td></tr>
+<tr><td>2026-09-30</td><td>−0.4%</td><td>4.5%</td><td>4.9%</td><td>$66</td></tr>
+<tr><td>2026-10-01</td><td>7.9%</td><td>7.8%</td><td>−0.2%</td><td>−$2</td></tr>
+<tr><td>2026-10-02</td><td>3.4%</td><td>7.8%</td><td>4.5%</td><td>$61</td></tr>
+<tr><td>2026-10-03</td><td>6.7%</td><td>10.8%</td><td>4.1%</td><td>$57</td></tr>
+<tr><td>2026-10-04</td><td>9.5%</td><td>10.9%</td><td>1.5%</td><td>$20</td></tr>
+<tr><td>2026-10-05</td><td>8.1%</td><td>9.9%</td><td>1.8%</td><td>$25</td></tr>
+<tr><td>2026-10-06</td><td>−0.3%</td><td>5.9%</td><td>6.2%</td><td>$85</td></tr>
+<tr><td>2026-10-07</td><td>4.1%</td><td>2.0%</td><td>−2.0%</td><td>−$28</td></tr>
+<tr><td>2026-10-08</td><td>−0.3%</td><td>10.0%</td><td>10.2%</td><td>$140</td></tr>
+<tr><td>2026-10-09</td><td>−7.6%</td><td>9.1%</td><td>16.7%</td><td>$229</td></tr>
+<tr><td>2026-10-10</td><td>1.3%</td><td>10.9%</td><td>9.6%</td><td>$132</td></tr>
+<tr><td>2026-10-11</td><td>3.5%</td><td>10.8%</td><td>7.2%</td><td>$99</td></tr>
+<tr><td>2026-10-12</td><td>−3.2%</td><td>8.2%</td><td>11.4%</td><td>$156</td></tr>
+<tr><td>2026-10-13</td><td>4.6%</td><td>10.4%</td><td>5.8%</td><td>$79</td></tr>
+<tr><td>2026-10-14</td><td>9.9%</td><td>10.9%</td><td>1.1%</td><td>$15</td></tr>
+<tr><td>2026-10-15</td><td>3.9%</td><td>8.6%</td><td>4.8%</td><td>$65</td></tr>
+<tr><td>2026-10-16</td><td>6.2%</td><td>8.8%</td><td>2.5%</td><td>$35</td></tr>
+<tr><td>2026-10-17</td><td>10.7%</td><td>9.0%</td><td>−1.6%</td><td>−$22</td></tr>
+<tr><td>2026-10-18</td><td>9.3%</td><td>9.9%</td><td>0.6%</td><td>$8</td></tr>
+<tr><td>2026-10-19</td><td>7.7%</td><td>9.4%</td><td>1.7%</td><td>$23</td></tr>
+<tr><td>2026-10-20</td><td>8.6%</td><td>10.4%</td><td>1.8%</td><td>$25</td></tr>
+<tr><td>2026-10-21</td><td>2.7%</td><td>4.6%</td><td>1.8%</td><td>$25</td></tr>
+<tr><td>2026-10-22</td><td>4.0%</td><td>5.0%</td><td>0.9%</td><td>$13</td></tr>
+<tr><td>2026-10-23</td><td>10.9%</td><td>9.9%</td><td>−1.1%</td><td>−$15</td></tr>
+<tr><td>2026-10-24</td><td>8.0%</td><td>3.3%</td><td>−4.7%</td><td>−$64</td></tr>
+<tr><td>2026-10-25</td><td>8.1%</td><td>8.5%</td><td>0.4%</td><td>$6</td></tr>
+<tr><td>2026-10-26</td><td>6.1%</td><td>8.9%</td><td>2.8%</td><td>$38</td></tr>
+<tr><td>2026-10-27</td><td>10.9%</td><td>10.9%</td><td>0.0%</td><td>$0</td></tr>
+<tr><td>2026-10-28</td><td>7.0%</td><td>8.5%</td><td>1.4%</td><td>$20</td></tr>
+<tr><td>2026-10-29</td><td>6.8%</td><td>18.5%</td><td>11.7%</td><td>$161</td></tr>
+<tr><td>2026-10-30</td><td>8.3%</td><td>50.2%</td><td>41.9%</td><td>$574</td></tr>
+<tr><td>2026-10-31</td><td>10.9%</td><td>40.8%</td><td>29.8%</td><td>$408</td></tr>
+<tr><td>2026-11-01</td><td>10.9%</td><td>18.3%</td><td>7.3%</td><td>$100</td></tr>
+<tr><td>2026-11-02</td><td>8.9%</td><td>17.5%</td><td>8.6%</td><td>$118</td></tr>
+<tr><td>2026-11-03</td><td>10.9%</td><td>12.8%</td><td>1.8%</td><td>$25</td></tr>
+<tr><td>2026-11-04</td><td>5.4%</td><td>10.9%</td><td>5.6%</td><td>$76</td></tr>
+<tr><td>2026-11-05</td><td>−3.6%</td><td>11.5%</td><td>15.1%</td><td>$207</td></tr>
+<tr><td>2026-11-06</td><td>−2.9%</td><td>10.9%</td><td>13.8%</td><td>$189</td></tr>
+<tr><td>2026-11-07</td><td>5.8%</td><td>10.9%</td><td>5.1%</td><td>$70</td></tr>
+<tr><td>2026-11-08</td><td>−1.0%</td><td>6.3%</td><td>7.3%</td><td>$100</td></tr>
+<tr><td>2026-11-09</td><td>−2.8%</td><td>1.3%</td><td>4.1%</td><td>$56</td></tr>
+<tr><td>2026-11-10</td><td>5.4%</td><td>8.9%</td><td>3.6%</td><td>$49</td></tr>
+<tr><td>2026-11-11</td><td>10.6%</td><td>10.9%</td><td>0.2%</td><td>$3</td></tr>
+<tr><td>2026-11-12</td><td>5.2%</td><td>10.1%</td><td>4.9%</td><td>$67</td></tr>
+<tr><td>2026-11-13</td><td>5.8%</td><td>9.4%</td><td>3.6%</td><td>$49</td></tr>
+<tr><td>2026-11-14</td><td>6.0%</td><td>5.8%</td><td>−0.2%</td><td>−$2</td></tr>
+<tr><td>2026-11-15</td><td>8.9%</td><td>−0.7%</td><td>−9.6%</td><td>−$132</td></tr>
+<tr><td>2026-11-16</td><td>7.4%</td><td>14.7%</td><td>7.3%</td><td>$100</td></tr>
+<tr><td>2026-11-17</td><td>2.3%</td><td>10.1%</td><td>7.8%</td><td>$107</td></tr>
+<tr><td>2026-11-18</td><td>7.9%</td><td>10.9%</td><td>3.0%</td><td>$40</td></tr>
+<tr><td>2026-11-19</td><td>4.4%</td><td>4.7%</td><td>0.3%</td><td>$4</td></tr>
+<tr><td>2026-11-20</td><td>2.5%</td><td>9.0%</td><td>6.5%</td><td>$90</td></tr>
+<tr><td>2026-11-21</td><td>−0.4%</td><td>10.9%</td><td>11.4%</td><td>$156</td></tr>
+<tr><td>2026-11-22</td><td>2.1%</td><td>10.8%</td><td>8.8%</td><td>$120</td></tr>
+</tbody></table></div></details>
+</div>
+<script>
+// Shared multi-panel time-series chart: synced crosshair, one tooltip, keyboard support.
+function makeChart(root, opts) {
+  const NS = 'http://www.w3.org/2000/svg';
+  const host = root.querySelector('.plot');
+  const tip = root.querySelector('.tip');
+  const n = opts.dates.length;
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  let svg, geo, cur = null, raf = 0;
+
+  function el(tag, attrs, parent, style) {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (style) Object.assign(e.style, style);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function txt(parent, x, y, s, cls, anchor) {
+    const t = el('text', { x, y, class: cls, 'text-anchor': anchor || 'start' }, parent);
+    t.textContent = s;
+    return t;
+  }
+  function nice(lo, hi, count) {
+    const raw = (hi - lo) / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const r = raw / mag;
+    const step = (r >= 7.5 ? 10 : r >= 3.5 ? 5 : r >= 1.5 ? 2 : 1) * mag;
+    const a = Math.floor(lo / step) * step, b = Math.ceil(hi / step) * step;
+    const ticks = [];
+    for (let v = a; v <= b + step / 2; v += step) ticks.push(+v.toFixed(10));
+    return { lo: a, hi: b, ticks };
+  }
+  function fmtDate(d) { return d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); }
+
+  function draw() {
+    host.querySelectorAll('svg').forEach(s => s.remove());
+    const W = Math.max(300, host.clientWidth);
+    const narrow = W < 520;
+    const padL = 46, padR = opts.padR || 14, strip = opts.strip ? 30 : 0, labH = 18, gapP = 14, axisH = 24;
+    let H = strip + axisH + 4;
+    opts.panels.forEach((p, i) => { H += labH + p.h + (i ? gapP : 0); });
+    svg = el('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': opts.aria, tabindex: 0 }, host);
+    const plotW = W - padL - padR, step = plotW / (n - 1);
+    const X = i => padL + i * step;
+    const panels = [];
+    let y = strip;
+    opts.panels.forEach((p, pi) => {
+      if (pi) y += gapP;
+      const ly = y + 12; y += labH;
+      const vals = [];
+      p.series.forEach(s => s.values().forEach(v => { if (v != null && isFinite(v)) vals.push(v); }));
+      let lo = Math.min(...vals), hi = Math.max(...vals);
+      if (p.zero) { lo = Math.min(lo, 0); hi = Math.max(hi, 0); }
+      const pad = (hi - lo) * 0.05; hi += pad; if (!p.zero || lo < 0) lo -= pad;
+      const t = nice(lo, hi, narrow ? 3 : (p.ticks || 4));
+      const y0 = y, Y = v => y0 + p.h - (v - t.lo) / (t.hi - t.lo) * p.h;
+      panels.push({ p, Y, t, ly });
+      y += p.h;
+    });
+    const top = strip, bottom = y;
+    geo = { X, panels, top, bottom, W, padL, padR, step };
+
+    // shaded periods span every panel; their labels sit in the strip on top
+    (opts.bands || []).forEach(b => {
+      const x1 = X(b.i0) - step / 2, x2 = X(b.i1) + step / 2;
+      if (b.i0 === b.i1) el('line', { x1: X(b.i0), x2: X(b.i0), y1: top, y2: bottom }, svg, { stroke: 'var(--ink-2)', strokeWidth: 1.5, opacity: 0.55 });
+      else el('rect', { x: x1, y: top, width: Math.max(2, x2 - x1), height: bottom - top }, svg, { fill: 'var(--band)' });
+      if (b.label) {
+        const mid = (x1 + x2) / 2, ty = 11 + (b.row || 0) * 14;
+        let anchor = 'middle', tx = mid;
+        if (mid > W - padR - 70) { anchor = 'end'; tx = Math.min(x2, W - padR); }
+        else if (mid < padL + 40) { anchor = 'start'; tx = Math.max(x1, 2); }
+        txt(svg, tx, ty, narrow && b.short ? b.short : b.label, 'note', anchor);
+      }
+    });
+
+    // grid, ticks and marks per panel
+    panels.forEach(pp => {
+      const { p, Y, t, ly } = pp;
+      txt(svg, padL, ly, p.label, 'plabel');
+      t.ticks.forEach(v => {
+        const yy = Y(v);
+        el('line', { x1: padL, x2: W - padR, y1: yy, y2: yy }, svg, { stroke: v === 0 && p.zero ? 'var(--axis)' : 'var(--grid)', strokeWidth: 1 });
+        txt(svg, padL - 6, yy + 4, p.tick(v).replace('-', '\u2212'), 'tick', 'end');
+      });
+      p.series.forEach(s => {
+        const arr = s.values();
+        if (s.type === 'bar') {
+          const bw = Math.max(1, step * 0.7);
+          arr.forEach((v, i) => {
+            if (v == null || v === 0) return;
+            const a = Y(Math.max(v, 0)), b = Y(Math.min(v, 0));
+            el('rect', { x: X(i) - bw / 2, y: a, width: bw, height: Math.max(0.75, b - a) }, svg, { fill: s.color(v) });
+          });
+        } else {
+          let d = '';
+          arr.forEach((v, i) => { if (v != null) d += (d ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); });
+          el('path', { d }, svg, { fill: 'none', stroke: s.color, strokeWidth: s.width || 2, strokeOpacity: s.opacity || 1, strokeLinejoin: 'round', strokeLinecap: 'round' });
+        }
+      });
+      (p.marks || []).forEach(m => {
+        const v = m.value(), cx = X(m.i), cy = Y(v);
+        el('circle', { cx, cy, r: 4 }, svg, { fill: 'var(--ink)', stroke: 'var(--bg)', strokeWidth: 2 });
+        const right = cx < W * 0.6;
+        txt(svg, cx + (right ? 9 : -9), cy + (m.dy || 4), narrow && m.short ? m.short : m.label, 'note strong', right ? 'start' : 'end');
+      });
+    });
+
+    // x axis: first day of each month
+    const ay = bottom + 16;
+    let lastX = -1e9;
+    opts.dates.forEach((d, i) => {
+      // first row of each month, so a gap over the 1st doesn't drop the label
+      if (i === 0 || d.getUTCMonth() === opts.dates[i - 1].getUTCMonth()) return;
+      const x = X(i);
+      el('line', { x1: x, x2: x, y1: bottom, y2: bottom + 4 }, svg, { stroke: 'var(--axis)', strokeWidth: 1 });
+      if (x - lastX < (narrow ? 34 : 28)) return;
+      txt(svg, x, ay, MON[d.getUTCMonth()], 'tick', 'middle'); lastX = x;
+    });
+
+    // crosshair layer
+    const g = el('g', { 'pointer-events': 'none' }, svg);
+    const vline = el('line', { y1: top, y2: bottom }, g, { stroke: 'var(--ink-2)', strokeWidth: 1, opacity: 0 });
+    const dots = [];
+    panels.forEach(({ p, Y }) => p.series.forEach(s => {
+      if (s.type === 'bar') return;
+      dots.push({ s, Y, c: el('circle', { r: 4 }, g, { fill: s.color, stroke: 'var(--bg)', strokeWidth: 2, opacity: 0 }) });
+    }));
+    geo.vline = vline; geo.dots = dots;
+    const hit = el('rect', { x: padL - step / 2, y: top, width: plotW + step, height: bottom - top }, svg, { fill: 'transparent' });
+    hit.addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(); show(Math.round((e.clientX - r.left - padL) / step)); });
+    hit.addEventListener('pointerleave', hide);
+    svg.addEventListener('focus', () => show(cur == null ? n - 1 : cur));
+    svg.addEventListener('blur', hide);
+    svg.addEventListener('keydown', e => {
+      const k = { ArrowLeft: -1, ArrowRight: 1 }[e.key];
+      if (k) { e.preventDefault(); show((cur == null ? n - 1 : cur) + k * (e.shiftKey ? 7 : 1)); }
+      if (e.key === 'Escape') hide();
+    });
+    if (cur != null && root.dataset.active === '1') show(cur);
+  }
+
+  function show(i) {
+    i = Math.max(0, Math.min(n - 1, i)); cur = i; root.dataset.active = '1';
+    const x = geo.X(i);
+    geo.vline.setAttribute('x1', x); geo.vline.setAttribute('x2', x); geo.vline.style.opacity = 0.5;
+    geo.dots.forEach(({ s, Y, c }) => {
+      const v = s.values()[i];
+      if (v == null) { c.style.opacity = 0; return; }
+      c.setAttribute('cx', x); c.setAttribute('cy', Y(v)); c.style.opacity = 1;
+    });
+    tip.replaceChildren();
+    const h = document.createElement('div'); h.className = 'tip-date'; h.textContent = fmtDate(opts.dates[i]); tip.appendChild(h);
+    opts.tooltip(i).forEach(r => {
+      const row = document.createElement('div'); row.className = 'tip-row' + (r.sep ? ' sep' : '');
+      const key = document.createElement('span'); key.className = 'key' + (r.key ? '' : ' blank');
+      if (r.key) key.style.background = r.key;
+      const v = document.createElement('strong'); v.textContent = r.value;
+      const l = document.createElement('span'); l.className = 'tip-label'; l.textContent = r.label;
+      row.append(key, v, l); tip.appendChild(row);
+    });
+    tip.hidden = false;
+    const tw = tip.offsetWidth, hw = host.clientWidth;
+    let left = x + 14; if (left + tw > hw - 4) left = x - 14 - tw; if (left < 4) left = 4;
+    tip.style.left = left + 'px'; tip.style.top = (geo.top + 6) + 'px';
+  }
+  function hide() {
+    root.dataset.active = '0'; tip.hidden = true;
+    if (!geo) return;
+    geo.vline.style.opacity = 0; geo.dots.forEach(d => d.c.style.opacity = 0);
+  }
+
+  new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }).observe(host);
+  draw();
+  return { redraw: draw };
+}
+
+const DATA = {"d":["2026-06-24","2026-06-25","2026-06-26","2026-06-27","2026-06-28","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-03","2026-07-04","2026-07-05","2026-07-06","2026-07-07","2026-07-08","2026-07-09","2026-07-10","2026-07-11","2026-07-12","2026-07-13","2026-07-14","2026-07-15","2026-07-16","2026-07-17","2026-07-18","2026-07-19","2026-07-20","2026-07-21","2026-07-22","2026-07-23","2026-07-24","2026-07-25","2026-07-26","2026-07-27","2026-07-28","2026-07-29","2026-07-30","2026-07-31","2026-08-01","2026-08-02","2026-08-03","2026-08-04","2026-08-05","2026-08-06","2026-08-07","2026-08-08","2026-08-09","2026-08-10","2026-08-11","2026-08-12","2026-08-13","2026-08-14","2026-08-15","2026-08-16","2026-08-17","2026-08-18","2026-08-19","2026-08-20","2026-08-21","2026-08-22","2026-08-23","2026-08-24","2026-08-25","2026-08-26","2026-08-27","2026-08-28","2026-08-29","2026-08-30","2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-05","2026-09-06","2026-09-07","2026-09-08","2026-09-09","2026-09-10","2026-09-11","2026-09-12","2026-09-13","2026-09-14","2026-09-15","2026-09-16","2026-09-17","2026-09-18","2026-09-19","2026-09-20","2026-09-21","2026-09-22","2026-09-23","2026-09-24","2026-09-25","2026-09-26","2026-09-27","2026-09-28","2026-09-29","2026-09-30","2026-10-01","2026-10-02","2026-10-03","2026-10-04","2026-10-05","2026-10-06","2026-10-07","2026-10-08","2026-10-09","2026-10-10","2026-10-11","2026-10-12","2026-10-13","2026-10-14","2026-10-15","2026-10-16","2026-10-17","2026-10-18","2026-10-19","2026-10-20","2026-10-21","2026-10-22","2026-10-23","2026-10-24","2026-10-25","2026-10-26","2026-10-27","2026-10-28","2026-10-29","2026-10-30","2026-10-31","2026-11-01","2026-11-02","2026-11-03","2026-11-04","2026-11-05","2026-11-06","2026-11-07","2026-11-08","2026-11-09","2026-11-10","2026-11-11","2026-11-12","2026-11-13","2026-11-14","2026-11-15","2026-11-16","2026-11-17","2026-11-18","2026-11-19","2026-11-20","2026-11-21","2026-11-22"],"b":[3.65,-4.18,1.24,-2.16,5.94,10.95,3.41,5.26,-3.55,7.49,3.59,6.02,6.48,-6.75,8.76,3.64,-0.95,2.68,5.96,4.35,10.9,10.95,10.95,0.25,10.95,-4.26,-1.04,3.86,-4.7,3.76,7.31,0.74,-3.68,3.91,8.79,4.12,4.68,0.38,10.95,10.95,8.71,4.52,6.73,5.89,8.86,8.49,7.25,10.38,9.16,9.89,3.64,-2.89,4.72,6.84,5.85,-0.94,-8.42,10.95,14.89,18.05,10.95,10.95,10.95,6.99,5.28,6.77,0.97,7.03,6.94,4.26,5.34,4.03,9.65,10.73,10.7,10.72,10.95,-9.04,6.21,2.3,0.84,4.02,6.28,1.25,10.09,8.35,6.54,9.77,10.95,2.54,7.23,4.35,0.63,-0.43,2.83,6.34,1.13,10.08,-0.35,7.92,3.37,6.71,9.49,8.1,-0.32,4.06,-0.29,-7.59,1.33,3.51,-3.24,4.57,9.86,3.86,6.23,10.67,9.31,7.69,8.58,2.73,4.01,10.95,7.99,8.07,6.06,10.95,7.04,6.78,8.31,10.95,10.95,8.87,10.95,5.37,-3.65,-2.88,5.84,-1.01,-2.78,5.36,10.62,5.22,5.83,5.96,8.91,7.4,2.28,7.93,4.45,2.49,-0.43,2.06],"h":[12.88,10.53,10.95,10.51,10.95,11.85,10.95,7.55,10.25,10.55,10.95,10.28,10.95,10.95,11.16,9.05,6.19,6.66,7.43,8.92,11.4,17.85,10.16,9.02,10.95,10.06,8.76,7.17,6.41,10.2,9.44,9.16,2.84,10.95,10.95,8.96,8.84,7.1,10.9,8.63,9.06,10.15,1.88,7.15,6.71,4.86,5.31,6.59,10.95,10.95,10.83,9.09,10.95,10.79,10.48,6.03,20.16,22.76,35.34,31.93,23.75,18.32,15.81,8.18,10.74,7.07,-1.73,10.46,10.35,10.45,6.23,4.65,10.95,10.83,10.23,10.95,7.57,0.88,4.39,7.48,-0.33,4.0,7.45,5.56,10.74,15.81,14.24,11.09,10.95,29.96,11.2,11.08,9.63,9.68,7.51,10.95,8.79,6.16,4.5,7.76,7.83,10.85,10.95,9.92,5.86,2.05,9.95,9.13,10.95,10.75,8.17,10.36,10.95,8.64,8.77,9.03,9.88,9.39,10.42,4.57,4.95,9.87,3.3,8.5,8.85,10.95,8.48,18.5,50.21,40.76,18.28,17.46,12.8,10.95,11.5,10.95,10.95,6.32,1.27,8.95,10.85,10.15,9.43,5.78,-0.73,14.7,10.06,10.89,4.74,9.03,10.93,10.82],"s":[9.23,14.7,9.71,12.67,5.01,0.9,7.54,2.29,13.79,3.06,7.36,4.26,4.47,17.7,2.39,5.41,7.14,3.98,1.48,4.56,0.5,6.9,-0.79,8.77,0.0,14.32,9.8,3.31,11.11,6.44,2.13,8.42,6.52,7.04,2.16,4.84,4.17,6.72,-0.05,-2.32,0.35,5.63,-4.85,1.25,-2.15,-3.63,-1.94,-3.79,1.79,1.06,7.19,11.98,6.23,3.95,4.63,6.96,28.58,11.81,20.45,13.88,12.8,7.37,4.86,1.19,5.46,0.3,-2.7,3.43,3.41,6.19,0.89,0.62,1.3,0.1,-0.47,0.23,-3.38,9.93,-1.82,5.18,-1.17,-0.02,1.18,4.31,0.65,7.47,7.7,1.31,0.0,27.42,3.96,6.73,9.01,10.11,4.68,4.61,7.65,-3.92,4.85,-0.17,4.46,4.14,1.46,1.82,6.17,-2.01,10.25,16.72,9.62,7.25,11.41,5.79,1.09,4.78,2.55,-1.64,0.58,1.7,1.83,1.84,0.94,-1.08,-4.69,0.43,2.8,0.0,1.44,11.72,41.9,29.81,7.33,8.58,1.85,5.58,15.15,13.83,5.11,7.33,4.05,3.59,0.23,4.93,3.6,-0.18,-9.64,7.3,7.79,2.95,0.29,6.54,11.36,8.77],"b7":[3.65,-0.26,0.24,-0.36,0.9,2.58,2.69,2.93,3.02,3.91,4.73,4.74,4.1,2.65,3.15,4.18,2.97,2.84,2.83,2.53,5.05,5.36,6.41,6.58,7.76,6.3,5.53,4.52,2.29,1.26,2.27,0.81,0.89,1.6,2.3,3.56,3.69,2.7,4.16,6.25,6.94,6.33,6.7,6.88,8.09,7.73,7.21,7.45,8.11,8.56,8.24,6.56,6.02,5.96,5.31,3.87,1.26,2.3,4.84,6.75,7.33,8.06,9.76,11.96,11.15,9.99,7.55,6.99,6.42,5.46,5.23,5.05,5.46,6.85,7.38,7.92,8.87,6.82,7.13,6.08,4.67,3.71,3.08,1.69,4.43,4.73,5.34,6.61,7.6,7.07,7.92,7.1,6.0,5.01,4.01,3.36,3.15,3.56,2.89,3.93,4.47,5.03,5.48,6.47,4.99,5.62,4.45,2.88,2.11,1.26,-0.36,0.34,1.16,1.76,3.73,5.06,5.89,7.45,8.03,7.01,7.03,7.71,7.32,7.15,6.91,7.25,7.87,8.26,7.88,8.31,8.72,9.12,9.12,8.88,7.39,5.79,5.06,3.36,1.69,0.89,1.64,2.91,4.15,4.17,5.59,7.04,6.6,6.22,6.11,5.63,4.72,3.74],"h7":[12.88,11.7,11.45,11.22,11.16,11.28,11.23,10.47,10.43,10.37,10.44,10.34,10.21,10.21,10.73,10.55,9.93,9.32,8.91,8.62,8.69,9.64,9.8,10.2,10.82,11.19,11.17,10.57,8.93,8.94,9.0,8.74,7.71,8.02,8.56,8.93,8.74,8.4,8.65,9.48,9.21,9.09,8.08,7.84,7.78,6.92,6.45,6.09,6.21,7.5,8.03,8.37,9.24,10.02,10.58,9.88,11.19,12.9,16.65,19.64,21.49,22.61,24.01,22.3,20.58,16.54,11.73,9.83,8.69,7.93,7.65,6.78,7.33,9.13,9.1,9.18,8.77,8.01,7.97,7.48,5.88,4.99,4.49,4.2,5.61,7.24,8.21,9.84,10.84,14.05,14.86,14.9,14.02,13.37,12.86,12.86,9.83,9.11,8.18,7.91,7.64,8.12,8.12,8.28,8.24,7.89,8.2,8.39,8.4,8.37,8.12,8.77,10.04,9.85,9.8,9.53,9.4,9.58,9.58,8.67,8.14,8.3,7.48,7.28,7.21,7.28,7.84,9.78,15.54,20.89,22.29,23.52,23.78,24.14,23.14,17.53,13.27,11.56,9.25,8.7,8.68,8.49,8.27,7.54,6.53,8.45,8.61,8.61,7.84,7.78,8.52,10.17],"s7":[9.23,11.97,11.21,11.58,10.26,8.7,8.54,7.54,7.41,6.46,5.71,5.6,6.11,7.56,7.58,6.38,6.96,6.48,6.08,6.09,3.64,4.28,3.4,3.63,3.06,4.89,5.64,6.04,6.64,7.68,6.73,7.93,6.82,6.42,6.26,5.37,5.04,5.7,4.49,3.22,2.27,2.76,1.38,0.96,-0.3,-0.82,-0.76,-1.35,-1.9,-1.06,-0.21,1.81,3.22,4.06,5.26,6.0,9.93,10.59,11.8,12.9,14.16,14.55,14.25,10.34,9.43,6.55,4.18,2.84,2.28,2.47,2.42,1.73,1.88,2.28,1.72,1.27,-0.1,1.19,0.84,1.4,1.21,1.28,1.41,2.51,1.19,2.51,2.87,3.23,3.23,6.98,6.93,7.8,8.02,8.36,8.84,9.5,6.68,5.55,5.28,3.97,3.17,3.09,2.64,1.81,3.25,2.27,3.76,5.51,6.29,7.12,8.49,8.43,8.88,8.09,6.07,4.46,3.51,2.12,1.56,1.66,1.11,0.6,0.16,0.14,0.29,0.03,-0.02,1.52,7.66,12.58,13.57,14.4,14.66,15.25,15.74,11.73,8.2,8.2,7.56,7.81,7.04,5.58,4.12,3.36,0.94,1.4,2.0,2.39,1.73,2.15,3.8,6.43],"p":[126.0,201.0,133.0,174.0,69.0,12.0,103.0,31.0,189.0,42.0,101.0,58.0,61.0,242.0,33.0,74.0,98.0,54.0,20.0,63.0,7.0,94.0,-11.0,120.0,0.0,196.0,134.0,45.0,152.0,88.0,29.0,115.0,89.0,96.0,30.0,66.0,57.0,92.0,-1.0,-32.0,5.0,77.0,-66.0,17.0,-29.0,-50.0,-27.0,-52.0,25.0,15.0,99.0,164.0,85.0,54.0,63.0,95.0,391.0,162.0,280.0,190.0,175.0,101.0,67.0,16.0,75.0,4.0,-37.0,47.0,47.0,85.0,12.0,8.0,18.0,1.0,-6.0,3.0,-46.0,136.0,-25.0,71.0,-16.0,0.0,16.0,59.0,9.0,102.0,106.0,18.0,0.0,376.0,54.0,92.0,123.0,138.0,64.0,63.0,105.0,-54.0,66.0,-2.0,61.0,57.0,20.0,25.0,85.0,-28.0,140.0,229.0,132.0,99.0,156.0,79.0,15.0,65.0,35.0,-22.0,8.0,23.0,25.0,25.0,13.0,-15.0,-64.0,6.0,38.0,0.0,20.0,161.0,574.0,408.0,100.0,118.0,25.0,76.0,207.0,189.0,70.0,100.0,56.0,49.0,3.0,67.0,49.0,-2.0,-132.0,100.0,107.0,40.0,4.0,90.0,156.0,120.0]};
+const DATES = DATA.d.map(s => new Date(s + 'T00:00:00Z'));
+const pct = v => (v > 0 ? '+' : v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(1) + '%';
+const usd = v => (v < 0 ? '\u2212' : v > 0 ? '+' : '') + '$' + Math.abs(Math.round(v)).toLocaleString('en-US');
+
+let mode = '7';
+const pick = (a, b) => () => mode === '7' ? DATA[a] : DATA[b];
+const chart = makeChart(document.getElementById('root'), {
+  dates: DATES, strip: true, aria: 'Funding rates on both venues with the spread below',
+  bands: [{"i0": 144, "i1": 144, "label": "Worst day: 15 Nov, −$132", "short": "15 Nov", "row": 0}, {"i0": 42, "i1": 47, "label": "Worst drawdown: 5–10 Aug, −$207", "short": "5–10 Aug", "row": 1}],
+  panels: [
+    { label: 'Funding rate, annualized', h: 190, zero: true, tick: v => v + '%',
+      series: [ { values: pick('b7', 'b'), color: 'var(--s-bin)' }, { values: pick('h7', 'h'), color: 'var(--s-hl)' } ] },
+    { label: 'Spread: Hyperliquid − OKX', h: 120, zero: true, tick: v => v + '%',
+      series: [ { type: 'bar', values: pick('s7', 's'), color: v => v >= 0 ? 'var(--pos)' : 'var(--neg)' } ] }
+  ],
+  tooltip: i => {
+    const sfx = mode === '7' ? ' (7d avg)' : '';
+    const b = mode === '7' ? DATA.b7[i] : DATA.b[i], h = mode === '7' ? DATA.h7[i] : DATA.h[i], s = mode === '7' ? DATA.s7[i] : DATA.s[i];
+    return [
+      { key: 'var(--s-hl)', value: pct(h), label: 'Hyperliquid' + sfx },
+      { key: 'var(--s-bin)', value: pct(b), label: 'OKX' + sfx },
+      { key: s >= 0 ? 'var(--pos)' : 'var(--neg)', value: pct(s), label: 'Spread' + sfx },
+      { sep: true, value: usd(DATA.p[i]), label: 'Funding P&L that day' }
+    ];
+  }
+});
+for (const [id, m] of [['m7', '7'], ['m1', '1']]) document.getElementById(id).addEventListener('click', () => {
+  mode = m;
+  document.getElementById('m7').setAttribute('aria-pressed', m === '7');
+  document.getElementById('m1').setAttribute('aria-pressed', m === '1');
+  chart.redraw();
+});
+
+</script>
