@@ -38,7 +38,7 @@ Hyperliquid Market OI: $1,161m. Current exposure is $2.05m (0.18%) and the OI li
 - Daily M2M = HYPE held per leg × change in the $ price gap between OKX and Hyperliquid. Both legs hold the same amount of HYPE, sized to $500k at the previous close.
 - Days are UTC. Annualized = daily × 365. No compounding, before trading fees.
 
-**Do we know what causes the spread, or have reason to believe it will persist?** No. Our theory is that it comes from how funding is calculated and settled: OKX settles every [__] hours and Hyperliquid every hour, and each venue measures the premium against a different reference price. Hyperliquid's funding has been higher than OKX's on 84% of days, and no 30-day stretch in the data had a negative average spread. This is a theory, not empirical evidence, and it doesn't explain why the spread would persist.
+**Do we know what causes the spread, or have reason to believe it will persist?** No. Our theory is that it comes from how funding is calculated and settled: OKX settles every 8 hours and Hyperliquid every hour, and each venue measures the premium against a different reference price. Hyperliquid's funding has been higher than OKX's on 84% of days, and no 30-day stretch in the data had a negative average spread. This is a theory, not empirical evidence, and it doesn't explain why the spread would persist.
 
 📈 Growth chart: https://claude.ai/artifact/Nh68CKDmUWdK91vgAkjniB
 
