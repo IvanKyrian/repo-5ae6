@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>LCC Return Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one card, inputs left / result right, curve chart below. */
+:root{--bg:#ffffff;--panel:#f6f7f9;--ink:#111826;--ink-2:#4a5262;--ink-3:#737b8c;--rule:#dfe3ea;--rule-2:#eceff4;--accent:#1f3a8a;
+--s1:#2a78d6;--s2:#eb6834;--jane:#eda100;--good:#0b7a3b;--bad:#b3261e;
+--f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1a1d24;--panel:#22262f;--ink:#eef0f4;--ink-2:#b9bfcc;--ink-3:#8a91a0;--rule:#2d323c;--rule-2:#262a33;--accent:#9db4ff;
+--s1:#3987e5;--s2:#d95926;--jane:#c98500;--good:#3ec43e;--bad:#ef6b6b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1d24;--panel:#22262f;--ink:#eef0f4;--ink-2:#b9bfcc;--ink-3:#8a91a0;--rule:#2d323c;--rule-2:#262a33;--accent:#9db4ff;
+--s1:#3987e5;--s2:#d95926;--jane:#c98500;--good:#3ec43e;--bad:#ef6b6b;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body)}
+body{padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
+.fig{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{font-size:16px;font-weight:600;margin:0;line-height:1.3}
+.cap{font-size:12.5px;color:var(--ink-3);margin:3px 0 0;max-width:80ch}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+@media (max-width:680px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:16px;min-width:0}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{font-size:13px;color:var(--ink-2);display:flex;justify-content:space-between;gap:8px}
+.field output{font-family:var(--f-mono);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.seg{display:flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.seg button{flex:1;font:13px var(--f-body);padding:8px;background:var(--bg);color:var(--ink-2);border:0;cursor:pointer}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--bg)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.big{font-family:var(--f-mono);font-size:34px;font-weight:500;line-height:1.1}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3)}
+.rows{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;border-bottom:1px solid var(--rule-2);padding-bottom:7px}
+.row span:last-child{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.bar{display:flex;height:10px;border-radius:3px;overflow:hidden;margin-top:12px;background:var(--rule-2)}
+.bar i{display:block;height:100%}
+.chips{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.chip{font:11.5px var(--f-mono);padding:2px 8px;border-radius:3px;border:1px solid currentColor}
+.chip.ok{color:var(--good)}.chip.no{color:var(--bad)}
+.chart{position:relative}
+.chart svg{display:block;width:100%;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:14px;height:0;border-top:2px solid;display:inline-block}
+.note{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0;max-width:85ch}
+.src{font-size:11.5px;color:var(--ink-3);font-family:var(--f-mono);margin:0}
+</style></head>
+<body>
+<div class="fig">
+  <div>
+    <h1>LCC: what we earn depending on when we get called</h1>
+    <p class="cap">Per commitment. While uncalled, our capital at work is the margin (7.5%). Once called, it is the full commitment, held as USD3. APR = everything earned ÷ capital deployed over the period, annualized.</p>
+  </div>
+  <div class="grid">
+    <div class="panel">
+      <div class="field"><label>Deal</label>
+        <div class="seg" role="group" aria-label="Deal"><button type="button" id="b-pub" aria-pressed="false">Public LCC</button><button type="button" id="b-priv" aria-pressed="true">Trenches private deal</button></div></div>
+      <div class="field"><label for="u">Days before we get called <output id="o-u"></output></label><input id="u" type="range" min="0" max="180" step="1" value="30"></div>
+      <div class="field"><label for="c">Days we hold USD3 after the call <output id="o-c"></output></label><input id="c" type="range" min="0" max="180" step="1" value="70"></div>
+      <div class="field"><label for="usd3">USD3 APY <output id="o-usd3"></output></label><input id="usd3" type="range" min="2" max="12" step="0.01" value="6.94"></div>
+      <div class="field"><label for="aave">Aave yield on the margin <output id="o-aave"></output></label><input id="aave" type="range" min="0" max="8" step="0.1" value="4"></div>
+      <div class="field"><label for="hc">JANE valued at <output id="o-hc"></output></label><input id="hc" type="range" min="0" max="100" step="5" value="100"></div>
+      <div class="field"><label for="n">Commitment size <output id="o-n"></output></label><input id="n" type="range" min="1" max="20" step="1" value="1"></div>
+    </div>
+    <div class="panel" aria-live="polite">
+      <div class="eyebrow">APR over the period</div>
+      <div class="big" id="r-apr">–</div>
+      <div class="bar" aria-hidden="true"><i id="bar-org" style="background:var(--s1)"></i><i id="bar-jane" style="background:var(--jane)"></i></div>
+      <div class="chips" id="r-h"></div>
+      <div class="rows">
+        <div class="row"><span>Earned in USD</span><span id="r-org">–</span></div>
+        <div class="row"><span>Earned in JANE</span><span id="r-jane">–</span></div>
+        <div class="row"><span>Total earned</span><span id="r-inc">–</span></div>
+        <div class="row"><span>Period</span><span id="r-per">–</span></div>
+        <div class="row"><span>Average capital deployed</span><span id="r-cap">–</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="eyebrow" id="ch-title">APR by days before the call</div>
+    <div class="chart" id="ch"></div>
+    <div class="legend" id="lg"></div>
+  </div>
+  <p class="note"><b>Public LCC:</b> uncalled, the margin earns Aave + a 1.25% fee on the full commitment (= 16.7% on margin). Called, we hold USD3 (+0.75% for the first 35 days). <b>Trenches deal:</b> uncalled for up to 4 call windows (~90 days), the margin earns Aave + 12% USD + 18% in JANE; after that it rolls into public terms. If called within the term, the USD3 earns a fixed 18% for 70 days (USD3's own yield plus a JANE top-up), then USD3's normal yield. Margin is returned when called. No losses, gas or fees assumed.</p>
+  <p class="src">Sources: 3Jane LCC docs (fee 1.25%, margin 7.5%, funding bonus 0.75% / 35 days); Trenches LCC LP Deal terms; USD3 APY from app.3jane.xyz, 19 Nov 2026.</p>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const M=0.075,TERM=90;let deal='private';
+function model(d,U,C,y,a,hc){let org=0,jane=0,cd=0;const H=U+C;
+  for(let t=0;t<H;t++){const called=C>0&&t>=U;
+    if(!called){const cap=M;cd+=cap;
+      if(d==='private'&&t<TERM){org+=cap*(a+0.12)/365;jane+=cap*0.18/365}
+      else org+=cap*(a+0.0125/M)/365}
+    else{const cap=1,k=t-U;cd+=cap;
+      if(d==='private'&&U<TERM&&k<70){org+=y/365;jane+=(0.18-y)/365}
+      else org+=(y+(k<35?0.0075:0))/365}}
+  jane*=hc;return{org,jane,cd,H,apr:cd?(org+jane)/cd*365:0}}
+const money=v=>'$'+(v>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/100)/10+'k');
+const pct=v=>(v*100).toFixed(1)+'%';
+function read(){return{U:+$('u').value,C:+$('c').value,y:+$('usd3').value/100,a:+$('aave').value/100,hc:+$('hc').value/100,n:+$('n').value*1e6}}
+function draw(p){const box=$('ch');box.innerHTML='';const W=Math.max(300,box.clientWidth),H=240,m={l:46,r:12,t:12,b:34},iw=W-m.l-m.r,ih=H-m.t-m.b;
+  const NS='http://www.w3.org/2000/svg',el=(t,a,par)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);par.appendChild(e);return e};
+  const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':'APR by days before the call'},box);
+  const ser=['public','private'].map(d=>({d,v:Array.from({length:181},(_,U)=>model(d,U,p.C,p.y,p.a,p.hc).apr)}));
+  const max=Math.max(0.4,Math.ceil(Math.max(...ser.flatMap(s=>s.v))*1.05*10)/10);const x=v=>m.l+v/180*iw,y=v=>m.t+ih-(v/max)*ih;
+  for(let k=0;k<=4;k++){const v=max*k/4;el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),style:'stroke:var(--rule-2)'},svg);const t=el('text',{x:m.l-6,y:y(v)+4,'text-anchor':'end',style:'fill:var(--ink-3);font:11px var(--f-mono)'},svg);t.textContent=Math.round(v*100)+'%'}
+  [0,30,60,90,120,150,180].forEach(v=>{const t=el('text',{x:x(v),y:H-14,'text-anchor':'middle',style:'fill:var(--ink-3);font:11px var(--f-mono)'},svg);t.textContent=v+'d'});
+  el('line',{x1:x(TERM),x2:x(TERM),y1:m.t,y2:m.t+ih,style:'stroke:var(--ink-3);stroke-dasharray:3 4'},svg);
+  const tt=el('text',{x:x(TERM)+4,y:m.t+12,style:'fill:var(--ink-3);font:11px var(--f-mono)'},svg);tt.textContent='Trenches term ends';
+  const col={public:'var(--s1)',private:'var(--s2)'};
+  ser.forEach(s=>{el('path',{d:'M'+s.v.map((v,i)=>x(i)+','+y(v)).join('L'),style:`fill:none;stroke:${col[s.d]};stroke-width:${s.d===deal?2.5:1.5};opacity:${s.d===deal?1:.55}`},svg)});
+  const cur=ser.find(s=>s.d===deal).v[Math.min(180,p.U)];el('circle',{cx:x(Math.min(180,p.U)),cy:y(cur),r:5,style:`fill:${col[deal]};stroke:var(--bg);stroke-width:2`},svg);
+  $('ch-title').textContent=p.C>0?`APR by days before the call (then holding USD3 ${p.C} days)`:'APR if never called, by length of the period';
+  $('lg').innerHTML=`<span><i style="border-color:var(--s1)"></i>Public LCC</span><span><i style="border-color:var(--s2)"></i>Trenches private deal</span>`}
+function calc(){const p=read();$('o-u').textContent=p.U+' d';$('o-c').textContent=p.C?p.C+' d':'never called';$('o-usd3').textContent=pct(p.y);$('o-aave').textContent=pct(p.a);$('o-hc').textContent=Math.round(p.hc*100)+'% of TGE value';$('o-n').textContent=money(p.n);
+  if(p.U+p.C===0){$('r-apr').textContent='–';return}
+  const r=model(deal,p.U,p.C,p.y,p.a,p.hc),tot=r.org+r.jane;
+  $('r-apr').textContent=pct(r.apr);$('r-org').textContent=money(r.org*p.n);$('r-jane').textContent=money(r.jane*p.n);$('r-inc').textContent=money(tot*p.n);
+  $('r-per').textContent=r.H+' days';$('r-cap').textContent=money(r.cd/r.H*p.n);
+  $('bar-org').style.width=(tot?100*r.org/tot:0)+'%';$('bar-jane').style.width=(tot?100*r.jane/tot:0)+'%';
+  $('r-h').innerHTML=[12,15,20].map(h=>`<span class="chip ${r.apr*100>=h?'ok':'no'}">${r.apr*100>=h?'Clears':'Below'} ${h}%</span>`).join('');
+  draw(p)}
+['u','c','usd3','aave','hc','n'].forEach(id=>$(id).addEventListener('input',calc));
+const setDeal=d=>{deal=d;$('b-pub').setAttribute('aria-pressed',d==='public');$('b-priv').setAttribute('aria-pressed',d==='private');calc()};
+$('b-pub').addEventListener('click',()=>setDeal('public'));$('b-priv').addEventListener('click',()=>setDeal('private'));
+new ResizeObserver(()=>calc()).observe($('ch'));calc();
+</script>
+</body></html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Loss ladder: 3Jane's scenarios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#ffffff;--ink:#111826;--ink-2:#4a5262;--ink-3:#737b8c;--rule:#dfe3ea;--rule-2:#eceff4;
+--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--zone:#e9f6ef;--bad:#fbeaea;
+--f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1a1d24;--ink:#eef0f4;--ink-2:#b9bfcc;--ink-3:#8a91a0;--rule:#2d323c;--rule-2:#262a33;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--zone:#16291f;--bad:#2f1a1a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1d24;--ink:#eef0f4;--ink-2:#b9bfcc;--ink-3:#8a91a0;--rule:#2d323c;--rule-2:#262a33;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--zone:#16291f;--bad:#2f1a1a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body)}
+body{padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px))}
+.fig{max-width:960px;margin:0 auto}
+h1{font-size:16px;font-weight:600;margin:0;line-height:1.3;text-wrap:balance}
+.cap{font-size:12.5px;color:var(--ink-3);margin:3px 0 0}
+.chart{position:relative;margin-top:12px;width:100%}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart svg path,.chart svg text,.chart svg line,.chart svg circle{pointer-events:none}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.note{font-size:12.5px;color:var(--ink-2);margin:10px 0 0;line-height:1.5;max-width:80ch}
+.src{font-size:11.5px;color:var(--ink-3);margin:6px 0 0;font-family:var(--f-mono)}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;line-height:1.45;padding:7px 9px;border-radius:4px;white-space:nowrap;z-index:3;transform:translate(-50%,calc(-100% - 10px));opacity:0;transition:opacity .08s}
+@media (prefers-reduced-motion:reduce){.tip{transition:none}}
+</style></head>
+<body><figure class="fig" id="fig"><h1>Loss ladder: 3Jane's scenarios</h1><p class="cap">1-year return of each tranche if Slope and Settle lose a multiple of 3Jane's assumed annual loss rate (Slope 3.6%, Settle 4.6%; blended 4.0%). Labels: multiple and annual loss rate on the $103M book.</p><div class="chart" id="c"></div><div class="legend" id="lg"></div><p class="note">Today's expected loss (1×) is already inside the yields. Extra losses first reduce both yields, which reach zero at 3.4× (13.7% a year). sUSD3 is then wiped out and USD3 principal is first hit at 5.5× (22% a year). Losses are assumed to arrive evenly over the year.</p><p class="src">Source: 3Jane USD3/sUSD3 stress model (inputs as of 16 Nov 2026), reproduced</p></figure>
+<script>
+const NS='http://www.w3.org/2000/svg';
+const el=(t,a={},p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+const txt=(svg,x,y,s,st,anchor)=>{const t=el('text',{x,y,'text-anchor':anchor||'middle',style:st},svg);t.textContent=s;return t};
+const MONO='fill:var(--ink-3);font:11px var(--f-mono)';
+function tipFor(c){let t=c.querySelector('.tip');if(!t){t=document.createElement('div');t.className='tip';c.appendChild(t)}
+ return{show(h,x,y){t.innerHTML=h;const w=t.offsetWidth,cw=c.clientWidth;x=Math.min(Math.max(x,w/2),Math.max(w/2,cw-w/2));t.style.left=x+'px';t.style.top=Math.max(y,40)+'px';t.style.opacity=1},hide(){t.style.opacity=0}}}
+function legend(items){document.getElementById('lg').innerHTML=items.map(i=>i.dash?`<span><i style="background:none;border-top:2px dashed ${i.c};height:0;border-radius:0;width:14px"></i>${i.n}</span>`:`<span><i style="background:${i.c}"></i>${i.n}</span>`).join('')}
+function observe(box,draw){draw();new ResizeObserver(()=>draw()).observe(box)}
+const pct=v=>(v>=0?'+':'')+(v*100).toFixed(1)+'%';
+
+/* Diverging grouped bars: 1-year return of USD3 and sUSD3 per loss multiple */
+function ladderChart(o){const box=document.getElementById('c');observe(box,()=>{box.querySelectorAll('svg').forEach(s=>s.remove());
+ const W=Math.max(300,box.clientWidth),H=330,m={l:50,r:10,t:16,b:52},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ const lo=-1,hi=0.2,y=v=>m.t+(hi-v)/(hi-lo)*ih;
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':document.title},box);const tip=tipFor(box);
+ // zones: where USD3 principal is hit
+ const bi=o.rows.findIndex(r=>r.u<0);
+ [-1,-0.75,-0.5,-0.25,0,0.2].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),style:`stroke:${v===0?'var(--ink-3)':'var(--rule-2)'}`},svg);txt(svg,m.l-6,y(v)+4,(v>0?'+':'')+Math.round(v*100)+'%',MONO,'end')});
+ const n=o.rows.length,band=iw/n,bw=Math.min(26,band*0.32),gap=2;
+ if(bi>=0){el('rect',{x:m.l+bi*band,y:m.t,width:iw-bi*band,height:ih,style:'fill:var(--bad)'},svg);txt(svg,W-m.r-6,m.t+14,'USD3 principal hit',"fill:var(--ink-2);font:600 11.5px var(--f-body)",'end')}
+ o.rows.forEach((r,i)=>{const cx=m.l+i*band+band/2;
+  const hit=el('rect',{x:m.l+i*band,y:m.t,width:band,height:ih,style:'fill:transparent'},svg);
+  [[r.u,'var(--s1)',-bw-gap/2],[r.s,'var(--s2)',gap/2]].forEach(([v,c,dx])=>{if(Math.abs(v)<0.0005){txt(svg,cx+dx+bw/2,y(0)-5,'0','fill:var(--ink-3);font:10px var(--f-mono)');return}const y0=y(0),y1=y(v);el('rect',{x:cx+dx,y:Math.min(y0,y1),width:bw,height:Math.max(1.5,Math.abs(y1-y0)),rx:2,style:`fill:${c};pointer-events:none`},svg)});
+  txt(svg,cx,m.t+ih+16,r.lab,MONO);txt(svg,cx,m.t+ih+31,r.rate,'fill:var(--ink-2);font:11px var(--f-mono)');
+  hit.addEventListener('mouseenter',()=>{hit.style.fill='var(--rule-2)';hit.style.fillOpacity=.6;tip.show(`<b>${r.lab} expected loss · ${r.rate} a year</b><br>USD3: ${r.u>=0?pct(r.u)+' yield':pct(r.u)+' principal'}<br>sUSD3: ${r.s>=0?pct(r.s)+' yield':pct(r.s)+' principal'}`,cx,y(Math.max(r.u,r.s,0)))});
+  hit.addEventListener('mouseleave',()=>{hit.style.fill='transparent';tip.hide()})});
+ txt(svg,m.l+iw/2,H-4,o.xTitle,'fill:var(--ink-3);font:11px var(--f-body)')});
+ legend([{n:'USD3 (senior) 1-year return',c:'var(--s1)'},{n:'sUSD3 (junior, first loss) 1-year return',c:'var(--s2)'},{n:'USD3 principal loss zone',c:'var(--bad)'}])}
+
+/* Liquidity: days until all redemptions are paid vs redemption size */
+function liqChart(o){const box=document.getElementById('c');observe(box,()=>{box.querySelectorAll('svg').forEach(s=>s.remove());
+ const W=Math.max(300,box.clientWidth),H=320,m={l:46,r:16,t:16,b:44},iw=W-m.l-m.r,ih=H-m.t-m.b;
+ const x=v=>m.l+v/80*iw,y=v=>m.t+ih-(v/180)*ih;
+ const svg=el('svg',{viewBox:`0 0 ${W} ${H}`,height:H,role:'img','aria-label':document.title},box);const tip=tipFor(box);
+ el('rect',{x:m.l,y:m.t,width:x(o.instant)-m.l,height:ih,style:'fill:var(--zone)'},svg);
+ txt(svg,m.l+6,m.t+14,'Paid instantly','fill:var(--ink-2);font:600 11.5px var(--f-body)','start');
+ [0,30,60,90,120,150,180].forEach(v=>{el('line',{x1:m.l,x2:W-m.r,y1:y(v),y2:y(v),style:'stroke:var(--rule-2)'},svg);txt(svg,m.l-6,y(v)+4,v+'d',MONO,'end')});
+ [0,10,20,30,40,50,60,70,80].forEach(v=>txt(svg,x(v),m.t+ih+16,v+'%',MONO));
+ txt(svg,m.l+iw/2,H-6,'Redemption requests, % of TVL ($130M)','fill:var(--ink-3);font:11px var(--f-body)');
+ el('line',{x1:m.l,x2:W-m.r,y1:m.t+ih,y2:m.t+ih,style:'stroke:var(--ink-3)'},svg);
+ const lx=x(o.loopPct);el('line',{x1:lx,x2:lx,y1:m.t,y2:m.t+ih,style:'stroke:var(--ink-2);stroke-width:1.5;stroke-dasharray:4 4'},svg);
+ txt(svg,lx+4,m.t+30,'All loops unwind (~48%)','fill:var(--ink-2);font:11px var(--f-mono)','start');
+ o.series.forEach(s=>{const pts=s.v.map(([p,d])=>[x(p),y(Math.min(d,180))]);
+  el('path',{d:'M'+pts.map(q=>q.join(',')).join('L'),style:`fill:none;stroke:${s.c};stroke-width:2`},svg);
+  s.v.forEach(([p,d],i)=>{if(p%10)return;el('circle',{cx:pts[i][0],cy:pts[i][1],r:4,style:`fill:${s.c};stroke:var(--bg);stroke-width:2`},svg)})});
+ const hit=el('rect',{x:m.l,y:m.t,width:iw,height:ih,style:'fill:transparent'},svg);
+ hit.addEventListener('mousemove',e=>{const r=svg.getBoundingClientRect();const px=(e.clientX-r.left)*W/r.width;const p=Math.max(0,Math.min(80,Math.round((px-m.l)/iw*80/5)*5));
+  const rows=o.series.map(s=>{const d=s.v.find(q=>q[0]===p);return `${s.n}: <b>${d[1]===0?'paid now':(d[1]>180?'>180':d[1])+' days'}</b>`});
+  tip.show(`<b>${p}% of TVL = $${(o.tvl*p/100).toFixed(0)}M</b><br>`+rows.join('<br>'),x(p),y(60))});
+ hit.addEventListener('mouseleave',()=>tip.hide())});
+ legend(o.series.map(s=>({n:s.n,c:s.c})).concat([{n:'Covered by cash on hand',c:'var(--zone)'}]))}
+</script>
+<script>
+ladderChart({rows:[{lab:'1×',rate:'4%',u:0.07088,s:0.15650},{lab:'2×',rate:'8%',u:0.04130,s:0.09119},{lab:'3×',rate:'12%',u:0.01172,s:0.02588},{lab:'4×',rate:'16%',u:-0.00000,s:-0.28758},{lab:'5×',rate:'20%',u:-0.00000,s:-0.76395},{lab:'6×',rate:'24%',u:-0.01729,s:-1.00000},{lab:'8×',rate:'32%',u:-0.08585,s:-1.00000},{lab:'10×',rate:'40%',u:-0.15441,s:-1.00000}],xTitle:'Multiple of 3Jane\'s assumed loss rate · annual loss rate on the book'});
+</script></body></html>
