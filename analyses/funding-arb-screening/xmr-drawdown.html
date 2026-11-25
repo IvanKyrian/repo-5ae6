@@ -38,7 +38,7 @@ svg text.lab{fill:var(--ink);font-weight:600}
 .tip{position:absolute;pointer-events:none;background:var(--tip);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;font-size:13px;line-height:1.45;box-shadow:0 2px 8px #0002;white-space:nowrap;z-index:2}
 .tip b{font-weight:600}
 .tip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
-.notes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(20px,4vw,56px);margin-top:clamp(26px,3vw,40px);border-top:1px solid var(--ink);padding-top:18px}
+.notes{display:grid;grid-template-columns:minmax(0,640px);margin-top:clamp(26px,3vw,40px)}
 ol{margin:10px 0 0;padding-left:20px}
 li{margin-bottom:10px}
 li::marker{color:var(--mute)}
@@ -55,24 +55,13 @@ tr.dd td{background:var(--dd)}
 </style>
 
 <div class="band"><div class="wrap">
-  <h1>XMR's worst drawdown is the payback of its best-ever funding spike</h1>
-  <p class="lede">On 12–13 Nov Hyperliquid's XMR funding jumped to <b>486% annualized</b> and the arb made <b>+$16.6k in two days</b>. Over 14–18 Nov funding swung negative and gave back <b>−$4.4k</b>, about a quarter of it. The drawdown counts from the spike's peak, which is why it's the worst in dollars. All figures are funding only, at our current hedged size of $1.14M per leg, long Binance / short Hyperliquid.</p>
-  <div class="figs" id="figs"></div>
-
-  <section class="card">
-    <h2>Cumulative funding P&amp;L since 16 Jan</h2>
-    <p class="sub">Hover for daily values. The spike and the drawdown are shaded.</p>
-    <div class="legend"><span><i style="background:var(--spike);outline:1px solid var(--s1)"></i>Spike, 12–13 Nov</span><span><i style="background:var(--dd);outline:1px solid var(--neg)"></i>Drawdown, 14–18 Nov</span></div>
-    <div class="fig" id="main"></div>
-  </section>
-
   <div class="two">
-    <section class="card">
+    <section>
       <h2>Daily funding P&amp;L, 20 Oct – 24 Nov</h2>
       <p class="sub">One day, 12 Nov, made more than the whole drawdown cost.</p>
       <div class="fig z" id="bars"></div>
     </section>
-    <section class="card">
+    <section>
       <h2>What each venue paid, annualized</h2>
       <p class="sub">Hyperliquid spiked then went negative. Binance barely moved.</p>
       <div class="legend"><span><i style="background:var(--s1)"></i>Hyperliquid (we're short: we receive it)</span><span><i style="background:var(--s2)"></i>Binance (we're long: we pay it)</span></div>
@@ -82,20 +71,10 @@ tr.dd td{background:var(--dd)}
 
   <div class="notes">
     <section>
-      <h2>How to explain it</h2>
-      <ol>
-        <li><b>The spike.</b> On 12 Nov Hyperliquid longs paid up to 486% annualized, against 70% on Binance. That was the best day in the trade's history, +$13.0k, nearly 4× the next best day ($3.6k). It's why the 30d APR reads 72%.</li>
-        <li><b>The payback.</b> From 14 Nov Hyperliquid funding flipped negative, down to −58% annualized, so our short paid instead of receiving, while we still paid about 11% on the Binance long. That cost −$4.4k over 5 days.</li>
-        <li><b>Why it's the "worst".</b> A drawdown is measured from the highest point of cumulative P&amp;L, and the spike set that high. We were still <b>+$12.2k above where we were before the spike</b> at the drawdown's lowest point. The previous worst drawdowns were about −$2.6k (1 Aug and 19 Oct).</li>
-        <li><b>Now.</b> The daily spread is back to its usual 4–11% annualized. Cumulative funding is $3.3k below the 13 Nov peak, so the drawdown is still technically open. Without the two spike days, the 30d spread is 12.1%, or 30.2% APR, in line with the 90d and inception figures.</li>
-      </ol>
-    </section>
-    <section>
       <h2>Day by day, 10–20 Nov</h2>
       <div class="scroll"><table id="tbl"></table></div>
     </section>
   </div>
-  <p class="sub" style="margin-top:22px">Source: Hyperliquid API and our Binance funding export, summed by UTC day. Rates are annualized. P&amp;L = (Hyperliquid funding − Binance funding) × $1.14M.</p>
 </div></div>
 
 <script>
@@ -112,10 +91,6 @@ const md=s=>new Date(s+'T00:00:00Z').toLocaleDateString('en-GB',{day:'numeric',m
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sum=(a,b)=>D.filter(r=>r.d>=a&&r.d<=b).reduce((x,r)=>x+r.p,0);
 const spike=sum(...SP),dd=sum(...DD),peak=byD[SP[1]].c,trough=byD[DD[1]].c,last=D[D.length-1];
-document.getElementById('figs').innerHTML=[
- [usd(spike),'Made on 12–13 Nov'],[usd(dd),'Given back 14–18 Nov ('+Math.round(-dd/spike*100)+'% of the spike)'],
- [usd(trough-byD['2026-11-11'].c),'Still above the pre-spike level at the lowest point'],[usdp(last.c),'Cumulative funding since 16 Jan, to 24 Nov']
-].map(([a,b])=>`<div><div class="big">${esc(a)}</div><small>${esc(b)}</small></div>`).join('');
 
 const T=Date.parse('2026-11-25T00:00:00Z')-Date.parse('2026-11-24T00:00:00Z');
 function ticks(lo,hi,n){const step=Math.pow(10,Math.floor(Math.log10((hi-lo)/n)));const m=[1,2,2.5,5,10].find(k=>(hi-lo)/(step*k)<=n)*step;const out=[];for(let v=Math.ceil(lo/m)*m;v<=hi+1e-9;v+=m)out.push(+v.toFixed(6));return out}
@@ -126,29 +101,6 @@ function band(x,a,b,cls,y0,y1){return `<rect x="${x(Date.parse(a+'T00:00:00Z')-T
 function chart(id,rows,draw){const el=document.getElementById(id);const tip=tipper(el);const svgWrap=document.createElement('div');svgWrap.style.cssText='position:absolute;inset:0';el.appendChild(svgWrap);
  const ro=new ResizeObserver(()=>draw(svgWrap,el.clientWidth,el.clientHeight,tip));ro.observe(el)}
 
-// main cumulative chart
-chart('main',D,(w,W,H,tip)=>{
- const m={l:50,r:W<520?14:110,t:16,b:28};const t0=D[0].t,t1=last.t;
- const x=t=>m.l+(t-t0)/(t1-t0)*(W-m.l-m.r);const ymax=Math.ceil(peak/20000)*20000;const y=v=>m.t+(1-v/ymax)*(H-m.t-m.b);
- const yt=ticks(0,ymax,4);const months=[];for(let mo=1;mo<=10;mo++){const t=Date.UTC(2026,mo,1);if(t>t0&&t<t1)months.push(t)}
- const path=D.map((r,i)=>(i?'L':'M')+x(r.t).toFixed(1)+','+y(r.c).toFixed(1)).join('');
- const area=path+`L${x(t1)},${y(0)}L${x(t0)},${y(0)}Z`;
- const pk=byD[SP[1]];
- w.innerHTML=`<svg>${band(x,...SP,'--spike',m.t,H-m.b)}${band(x,...DD,'--dd',m.t,H-m.b)}
- ${yt.map(v=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--rule)"/><text x="${m.l-8}" y="${y(v)+4}" text-anchor="end">${v?'$'+v/1000+'k':'$0'}</text>`).join('')}
- ${months.filter((t,i)=>W>=520||i%2==0).map(t=>`<text x="${x(t)}" y="${H-8}" text-anchor="middle">${new Date(t).toLocaleDateString('en-GB',{month:'short',timeZone:'UTC'})}</text>`).join('')}
- <line x1="${m.l}" x2="${W-m.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--axis)"/>
- <path d="${area}" fill="var(--s1)" opacity=".08"/><path d="${path}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>
- <circle cx="${x(pk.t)}" cy="${y(pk.c)}" r="4" fill="var(--s1)" stroke="var(--bg)" stroke-width="2"/>
- <circle cx="${x(last.t)}" cy="${y(last.c)}" r="4" fill="var(--s1)" stroke="var(--bg)" stroke-width="2"/>
- ${W>=520?`<text class="lab" x="${x(last.t)+10}" y="${y(peak)-14}">Peak ${usdp(peak)}</text><text x="${x(last.t)+10}" y="${y(peak)+2}">13 Nov</text><text class="lab" x="${x(last.t)+10}" y="${y(last.c)+22}">${usdp(last.c)}</text><text x="${x(last.t)+10}" y="${y(last.c)+38}">24 Nov</text>`:''}
- <line id="mx" y1="${m.t}" y2="${H-m.b}" stroke="var(--axis)" visibility="hidden"/><circle id="md" r="5" fill="var(--s1)" stroke="var(--bg)" stroke-width="2" visibility="hidden"/>
- <rect x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent" id="hit"/></svg>`;
- const sv=w.querySelector('svg'),mx=sv.querySelector('#mx'),dot=sv.querySelector('#md');
- sv.querySelector('#hit').addEventListener('pointermove',e=>{const bx=sv.getBoundingClientRect();const px=e.clientX-bx.left;const t=t0+(px-m.l)/(W-m.l-m.r)*(t1-t0);let i=Math.round((t-t0)/T);i=Math.max(0,Math.min(D.length-1,i));const r=D[i];
-  mx.setAttribute('x1',x(r.t));mx.setAttribute('x2',x(r.t));mx.setAttribute('visibility','visible');dot.setAttribute('cx',x(r.t));dot.setAttribute('cy',y(r.c));dot.setAttribute('visibility','visible');tip(dayTip(r),x(r.t),e.clientY-bx.top)});
- sv.querySelector('#hit').addEventListener('pointerleave',()=>{mx.setAttribute('visibility','hidden');dot.setAttribute('visibility','hidden');tip(null)});
-});
 
 const Z=D.filter(r=>r.d>='2026-10-20');
 // daily P&L bars
