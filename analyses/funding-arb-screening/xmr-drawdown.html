@@ -1,0 +1,203 @@
+<title>XMR Drawdown Explained</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: a chart to defend one number in a PM discussion
+   IDEA a newspaper explainer: one cumulative line with the event marked, then a zoom that shows the cause
+   PICTURE cumulative funding P&L since inception with the spike and payback shaded; zoom of daily P&L and both venues' funding
+   COLOUR white / near-black, blue for our P&L and Hyperliquid, orange for Binance, red only for losses
+   TYPE Space Grotesk 700 + Inter, same as the screening page
+   LAYOUT title and four figures on top, main chart full width, two zoom charts side by side, talking points beside the day table */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#141414);--ink:light-dark(#191919,#efefef);--mute:light-dark(#666666,#9c9c9c);--rule:light-dark(#e6e6e6,#2c2c2c);--axis:light-dark(#bdbdbd,#4a4a4a);--s1:light-dark(#257de0,#338ced);--s2:light-dark(#f47230,#e76624);--neg:light-dark(#ec4647,#eb6263);--spike:light-dark(#257de01f,#338ced2e);--dd:light-dark(#ec464724,#eb626333);--tip:light-dark(#ffffff,#202020)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;margin:0;overflow-x:clip}
+h1,h2,.big{font-family:"Space Grotesk",Inter,sans-serif;letter-spacing:-.02em;line-height:1.05;margin:0}
+h1{font-size:clamp(30px,4vw,46px);font-weight:700;max-width:22ch}
+h2{font-size:20px;font-weight:700}
+p{margin:0}
+.band{padding-block:clamp(22px,3vw,40px);padding-left:max(5vw,16px,env(safe-area-inset-left,0px));padding-right:max(5vw,16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+.lede{color:var(--mute);margin-top:12px;max-width:72ch}
+.lede b{color:var(--ink);font-weight:600}
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(11em,1fr));gap:16px 28px;margin-top:22px;border-top:1px solid var(--ink);padding-top:14px}
+.big{font-size:clamp(26px,3vw,36px);font-weight:700;white-space:nowrap}
+.figs small{display:block;font-size:13px;color:var(--mute);line-height:1.35;margin-top:4px}
+.card{margin-top:clamp(22px,3vw,34px)}
+.sub{color:var(--mute);font-size:14px;margin-top:4px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--mute);margin-top:8px}
+.legend i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.fig{position:relative;margin-top:10px}
+.fig svg{display:block;width:100%;height:100%;overflow:visible}
+#main{height:360px}
+.z{height:300px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(20px,3vw,40px)}
+svg text{font:13px Inter,sans-serif;fill:var(--mute);paint-order:stroke;stroke:var(--bg);stroke-width:4px}
+svg text.lab{fill:var(--ink);font-weight:600}
+.tip{position:absolute;pointer-events:none;background:var(--tip);border:1px solid var(--rule);border-radius:6px;padding:8px 10px;font-size:13px;line-height:1.45;box-shadow:0 2px 8px #0002;white-space:nowrap;z-index:2}
+.tip b{font-weight:600}
+.tip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.notes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(20px,4vw,56px);margin-top:clamp(26px,3vw,40px);border-top:1px solid var(--ink);padding-top:18px}
+ol{margin:10px 0 0;padding-left:20px}
+li{margin-bottom:10px}
+li::marker{color:var(--mute)}
+.scroll{overflow-x:auto;margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th{font-weight:600;font-size:13px;color:var(--mute);text-align:right;padding:6px 8px;border-bottom:1px solid var(--ink)}
+td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr.sp td{background:var(--spike)}
+tr.dd td{background:var(--dd)}
+.neg{color:var(--neg)}
+@media(max-width:820px){.two,.notes{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){#main{height:300px}.z{height:260px}table{font-size:13px}th,td{padding:5px 4px}}
+</style>
+
+<div class="band"><div class="wrap">
+  <h1>XMR's worst drawdown is the payback of its best-ever funding spike</h1>
+  <p class="lede">On 12–13 Nov Hyperliquid's XMR funding jumped to <b>486% annualized</b> and the arb made <b>+$16.6k in two days</b>. Over 14–18 Nov funding swung negative and gave back <b>−$4.4k</b>, about a quarter of it. The drawdown counts from the spike's peak, which is why it's the worst in dollars. All figures are funding only, at our current hedged size of $1.14M per leg, long Binance / short Hyperliquid.</p>
+  <div class="figs" id="figs"></div>
+
+  <section class="card">
+    <h2>Cumulative funding P&amp;L since 16 Jan</h2>
+    <p class="sub">Hover for daily values. The spike and the drawdown are shaded.</p>
+    <div class="legend"><span><i style="background:var(--spike);outline:1px solid var(--s1)"></i>Spike, 12–13 Nov</span><span><i style="background:var(--dd);outline:1px solid var(--neg)"></i>Drawdown, 14–18 Nov</span></div>
+    <div class="fig" id="main"></div>
+  </section>
+
+  <div class="two">
+    <section class="card">
+      <h2>Daily funding P&amp;L, 20 Oct – 24 Nov</h2>
+      <p class="sub">One day, 12 Nov, made more than the whole drawdown cost.</p>
+      <div class="fig z" id="bars"></div>
+    </section>
+    <section class="card">
+      <h2>What each venue paid, annualized</h2>
+      <p class="sub">Hyperliquid spiked then went negative. Binance barely moved.</p>
+      <div class="legend"><span><i style="background:var(--s1)"></i>Hyperliquid (we're short: we receive it)</span><span><i style="background:var(--s2)"></i>Binance (we're long: we pay it)</span></div>
+      <div class="fig z" id="lines"></div>
+    </section>
+  </div>
+
+  <div class="notes">
+    <section>
+      <h2>How to explain it</h2>
+      <ol>
+        <li><b>The spike.</b> On 12 Nov Hyperliquid longs paid up to 486% annualized, against 70% on Binance. That was the best day in the trade's history, +$13.0k, nearly 4× the next best day ($3.6k). It's why the 30d APR reads 72%.</li>
+        <li><b>The payback.</b> From 14 Nov Hyperliquid funding flipped negative, down to −58% annualized, so our short paid instead of receiving, while we still paid about 11% on the Binance long. That cost −$4.4k over 5 days.</li>
+        <li><b>Why it's the "worst".</b> A drawdown is measured from the highest point of cumulative P&amp;L, and the spike set that high. We were still <b>+$12.2k above where we were before the spike</b> at the drawdown's lowest point. The previous worst drawdowns were about −$2.6k (1 Aug and 19 Oct).</li>
+        <li><b>Now.</b> The daily spread is back to its usual 4–11% annualized. Cumulative funding is $3.3k below the 13 Nov peak, so the drawdown is still technically open. Without the two spike days, the 30d spread is 12.1%, or 30.2% APR, in line with the 90d and inception figures.</li>
+      </ol>
+    </section>
+    <section>
+      <h2>Day by day, 10–20 Nov</h2>
+      <div class="scroll"><table id="tbl"></table></div>
+    </section>
+  </div>
+  <p class="sub" style="margin-top:22px">Source: Hyperliquid API and our Binance funding export, summed by UTC day. Rates are annualized. P&amp;L = (Hyperliquid funding − Binance funding) × $1.14M.</p>
+</div></div>
+
+<script>
+{
+const D=[{"d": "2026-01-16", "b": 5.52, "h": 0.35, "p": -161.6}, {"d": "2026-01-17", "b": 46.73, "h": 80.27, "p": 1047.3}, {"d": "2026-01-18", "b": 83.47, "h": 65.09, "p": -574.0}, {"d": "2026-01-19", "b": 16.2, "h": 18.39, "p": 68.4}, {"d": "2026-01-20", "b": 24.6, "h": 15.56, "p": -282.4}, {"d": "2026-01-21", "b": 19.77, "h": 32.37, "p": 393.8}, {"d": "2026-01-22", "b": 14.67, "h": 11.22, "p": -107.7}, {"d": "2026-01-23", "b": 20.03, "h": 22.36, "p": 72.7}, {"d": "2026-01-24", "b": 15.3, "h": 15.77, "p": 14.5}, {"d": "2026-01-25", "b": 23.77, "h": 36.81, "p": 407.4}, {"d": "2026-01-26", "b": 32.43, "h": 21.64, "p": -337.0}, {"d": "2026-01-27", "b": 27.93, "h": 23.86, "p": -127.3}, {"d": "2026-01-28", "b": 17.1, "h": 15.51, "p": -49.7}, {"d": "2026-01-29", "b": 15.63, "h": 14.78, "p": -26.6}, {"d": "2026-01-30", "b": 12.63, "h": 12.28, "p": -11.1}, {"d": "2026-01-31", "b": 10.01, "h": 3.76, "p": -195.2}, {"d": "2026-02-01", "b": 11.0, "h": 9.25, "p": -54.6}, {"d": "2026-02-02", "b": 11.0, "h": 10.68, "p": -10.1}, {"d": "2026-02-03", "b": 11.0, "h": 11.76, "p": 23.6}, {"d": "2026-02-04", "b": 13.4, "h": 21.73, "p": 260.2}, {"d": "2026-02-05", "b": 11.13, "h": 19.28, "p": 254.4}, {"d": "2026-02-06", "b": 11.93, "h": 11.71, "p": -6.9}, {"d": "2026-02-07", "b": 11.0, "h": 14.73, "p": 116.4}, {"d": "2026-02-08", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-02-09", "b": 11.0, "h": 11.51, "p": 16.0}, {"d": "2026-02-10", "b": 11.0, "h": 11.93, "p": 28.9}, {"d": "2026-02-11", "b": 11.0, "h": 11.17, "p": 5.2}, {"d": "2026-02-12", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-02-13", "b": 11.0, "h": 19.8, "p": 274.7}, {"d": "2026-02-14", "b": 11.0, "h": 27.02, "p": 500.4}, {"d": "2026-02-15", "b": 11.0, "h": 13.84, "p": 88.6}, {"d": "2026-02-16", "b": 11.0, "h": 11.05, "p": 1.4}, {"d": "2026-02-17", "b": 11.0, "h": 11.47, "p": 14.7}, {"d": "2026-02-18", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-02-19", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-02-20", "b": 11.0, "h": 12.27, "p": 39.7}, {"d": "2026-02-21", "b": 11.0, "h": 26.81, "p": 493.7}, {"d": "2026-02-22", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-02-23", "b": 11.0, "h": 9.98, "p": -31.9}, {"d": "2026-02-24", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-02-25", "b": 11.0, "h": 13.62, "p": 81.7}, {"d": "2026-02-26", "b": 11.0, "h": 11.69, "p": 21.7}, {"d": "2026-02-27", "b": 11.0, "h": 15.03, "p": 126.0}, {"d": "2026-02-28", "b": 11.0, "h": 13.23, "p": 69.8}, {"d": "2026-03-01", "b": 11.0, "h": 11.76, "p": 23.8}, {"d": "2026-03-02", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-03-03", "b": 11.0, "h": 11.22, "p": 6.9}, {"d": "2026-03-04", "b": 11.0, "h": 11.61, "p": 19.0}, {"d": "2026-03-05", "b": 11.0, "h": 11.69, "p": 21.7}, {"d": "2026-03-06", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-03-07", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-03-08", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-03-09", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-03-10", "b": 11.0, "h": 7.65, "p": -104.6}, {"d": "2026-03-11", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-03-12", "b": 11.0, "h": 9.91, "p": -34.1}, {"d": "2026-03-13", "b": 11.0, "h": 10.96, "p": -1.4}, {"d": "2026-03-14", "b": 11.0, "h": 11.83, "p": 25.8}, {"d": "2026-03-15", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-03-16", "b": 11.0, "h": 22.23, "p": 350.7}, {"d": "2026-03-17", "b": 11.0, "h": 13.27, "p": 71.1}, {"d": "2026-03-18", "b": 11.0, "h": 14.34, "p": 104.2}, {"d": "2026-03-19", "b": 11.0, "h": 11.51, "p": 16.0}, {"d": "2026-03-20", "b": 11.0, "h": 12.49, "p": 46.6}, {"d": "2026-03-21", "b": 11.0, "h": 13.77, "p": 86.6}, {"d": "2026-03-22", "b": 11.0, "h": 5.56, "p": -169.8}, {"d": "2026-03-23", "b": 11.0, "h": 29.23, "p": 569.4}, {"d": "2026-03-24", "b": 20.63, "h": 45.97, "p": 791.3}, {"d": "2026-03-25", "b": 11.0, "h": 26.95, "p": 498.2}, {"d": "2026-03-26", "b": 11.0, "h": 10.46, "p": -16.8}, {"d": "2026-03-27", "b": 11.0, "h": 10.83, "p": -5.3}, {"d": "2026-03-28", "b": 11.0, "h": 10.42, "p": -18.1}, {"d": "2026-03-29", "b": 11.0, "h": 12.88, "p": 58.7}, {"d": "2026-03-30", "b": 11.0, "h": 16.43, "p": 169.6}, {"d": "2026-03-31", "b": 11.0, "h": 13.79, "p": 87.1}, {"d": "2026-04-01", "b": 11.0, "h": 19.12, "p": 253.5}, {"d": "2026-04-02", "b": 11.0, "h": 13.98, "p": 93.1}, {"d": "2026-04-03", "b": 10.31, "h": 11.38, "p": 33.4}, {"d": "2026-04-04", "b": 11.0, "h": 27.52, "p": 515.9}, {"d": "2026-04-05", "b": 11.0, "h": 38.54, "p": 860.1}, {"d": "2026-04-06", "b": 11.0, "h": 46.74, "p": 1116.2}, {"d": "2026-04-07", "b": 11.0, "h": 24.82, "p": 431.6}, {"d": "2026-04-08", "b": 11.0, "h": 12.77, "p": 55.3}, {"d": "2026-04-09", "b": 11.0, "h": 18.05, "p": 220.1}, {"d": "2026-04-10", "b": 11.0, "h": 20.24, "p": 288.5}, {"d": "2026-04-11", "b": 11.0, "h": 23.85, "p": 401.2}, {"d": "2026-04-12", "b": 11.0, "h": 34.04, "p": 719.5}, {"d": "2026-04-13", "b": 11.0, "h": 13.41, "p": 75.3}, {"d": "2026-04-14", "b": 11.0, "h": 10.66, "p": -10.5}, {"d": "2026-04-15", "b": 11.0, "h": 13.2, "p": 68.8}, {"d": "2026-04-16", "b": 17.7, "h": 44.86, "p": 848.3}, {"d": "2026-04-17", "b": 27.97, "h": 59.42, "p": 982.5}, {"d": "2026-04-18", "b": 31.53, "h": 35.2, "p": 114.4}, {"d": "2026-04-19", "b": 11.63, "h": 25.21, "p": 424.1}, {"d": "2026-04-20", "b": 11.0, "h": 30.63, "p": 613.2}, {"d": "2026-04-21", "b": 25.7, "h": 59.17, "p": 1045.4}, {"d": "2026-04-22", "b": 11.0, "h": 24.99, "p": 437.0}, {"d": "2026-04-23", "b": 45.5, "h": 53.76, "p": 258.1}, {"d": "2026-04-24", "b": 25.2, "h": 33.88, "p": 271.2}, {"d": "2026-04-25", "b": 29.5, "h": 26.95, "p": -79.6}, {"d": "2026-04-26", "b": 11.0, "h": 17.46, "p": 201.9}, {"d": "2026-04-27", "b": 11.0, "h": 26.73, "p": 491.2}, {"d": "2026-04-28", "b": 16.2, "h": 27.17, "p": 342.7}, {"d": "2026-04-29", "b": 18.33, "h": 42.95, "p": 768.7}, {"d": "2026-04-30", "b": 18.53, "h": 33.2, "p": 458.2}, {"d": "2026-05-01", "b": 11.0, "h": 26.6, "p": 487.1}, {"d": "2026-05-02", "b": 22.73, "h": 22.45, "p": -8.8}, {"d": "2026-05-03", "b": 11.0, "h": 16.74, "p": 179.3}, {"d": "2026-05-04", "b": 27.5, "h": 75.14, "p": 1488.1}, {"d": "2026-05-05", "b": 17.43, "h": 45.68, "p": 882.1}, {"d": "2026-05-06", "b": 87.4, "h": 95.15, "p": 242.0}, {"d": "2026-05-07", "b": 37.8, "h": 101.26, "p": 1981.9}, {"d": "2026-05-08", "b": 36.8, "h": 36.6, "p": -6.1}, {"d": "2026-05-09", "b": 19.77, "h": 81.49, "p": 1927.6}, {"d": "2026-05-10", "b": 41.17, "h": 60.15, "p": 592.9}, {"d": "2026-05-11", "b": 11.0, "h": 33.17, "p": 692.5}, {"d": "2026-05-12", "b": 40.53, "h": 98.47, "p": 1809.4}, {"d": "2026-05-13", "b": 15.3, "h": 32.7, "p": 543.5}, {"d": "2026-05-14", "b": 11.0, "h": 21.75, "p": 335.8}, {"d": "2026-05-15", "b": 10.67, "h": 22.21, "p": 360.6}, {"d": "2026-05-16", "b": 11.0, "h": 11.58, "p": 18.3}, {"d": "2026-05-17", "b": 8.72, "h": 10.95, "p": 69.8}, {"d": "2026-05-18", "b": 11.0, "h": 11.7, "p": 22.0}, {"d": "2026-05-19", "b": 4.51, "h": 10.16, "p": 176.3}, {"d": "2026-05-20", "b": 11.0, "h": 19.05, "p": 251.3}, {"d": "2026-05-21", "b": 13.03, "h": 95.14, "p": 2564.5}, {"d": "2026-05-22", "b": 32.23, "h": 51.08, "p": 588.6}, {"d": "2026-05-23", "b": 11.0, "h": 43.76, "p": 1023.1}, {"d": "2026-05-24", "b": 11.0, "h": 11.72, "p": 22.5}, {"d": "2026-05-25", "b": 12.1, "h": 46.66, "p": 1079.3}, {"d": "2026-05-26", "b": 11.0, "h": 10.27, "p": -22.8}, {"d": "2026-05-27", "b": 11.0, "h": 17.94, "p": 216.6}, {"d": "2026-05-28", "b": 11.0, "h": 7.33, "p": -114.6}, {"d": "2026-05-29", "b": -3.65, "h": 1.83, "p": 171.0}, {"d": "2026-05-30", "b": 5.99, "h": 21.4, "p": 481.2}, {"d": "2026-05-31", "b": 11.0, "h": 25.82, "p": 463.0}, {"d": "2026-06-01", "b": 11.0, "h": 23.89, "p": 402.6}, {"d": "2026-06-02", "b": 11.0, "h": 119.3, "p": 3382.4}, {"d": "2026-06-03", "b": 46.47, "h": 70.7, "p": 756.7}, {"d": "2026-06-04", "b": 11.0, "h": 32.11, "p": 659.2}, {"d": "2026-06-05", "b": 14.0, "h": 40.68, "p": 833.3}, {"d": "2026-06-06", "b": 11.0, "h": 15.69, "p": 146.6}, {"d": "2026-06-07", "b": 11.0, "h": 20.56, "p": 298.7}, {"d": "2026-06-08", "b": 11.0, "h": 24.53, "p": 422.6}, {"d": "2026-06-09", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-06-10", "b": 11.0, "h": 10.92, "p": -2.4}, {"d": "2026-06-11", "b": 11.0, "h": 7.61, "p": -105.9}, {"d": "2026-06-12", "b": 11.0, "h": -1.24, "p": -382.2}, {"d": "2026-06-13", "b": 15.7, "h": 75.89, "p": 1879.9}, {"d": "2026-06-14", "b": 11.0, "h": 30.06, "p": 595.5}, {"d": "2026-06-15", "b": 17.13, "h": 102.75, "p": 2673.9}, {"d": "2026-06-16", "b": -13.2, "h": -8.71, "p": 140.3}, {"d": "2026-06-17", "b": 11.0, "h": 19.69, "p": 271.5}, {"d": "2026-06-18", "b": 11.0, "h": 27.68, "p": 521.1}, {"d": "2026-06-19", "b": 11.0, "h": 58.56, "p": 1485.3}, {"d": "2026-06-20", "b": 37.1, "h": 88.59, "p": 1608.1}, {"d": "2026-06-21", "b": 11.0, "h": 37.35, "p": 823.1}, {"d": "2026-06-22", "b": 11.0, "h": 12.27, "p": 39.5}, {"d": "2026-06-23", "b": 11.0, "h": 19.19, "p": 255.7}, {"d": "2026-06-24", "b": 11.0, "h": 13.36, "p": 73.9}, {"d": "2026-06-25", "b": 11.0, "h": 11.9, "p": 28.2}, {"d": "2026-06-26", "b": 11.0, "h": 11.4, "p": 12.5}, {"d": "2026-06-27", "b": 11.0, "h": 16.31, "p": 165.8}, {"d": "2026-06-28", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-06-29", "b": 11.0, "h": 19.15, "p": 254.4}, {"d": "2026-06-30", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-07-01", "b": 11.0, "h": 9.08, "p": -60.1}, {"d": "2026-07-02", "b": 4.08, "h": 13.64, "p": 298.8}, {"d": "2026-07-03", "b": 11.0, "h": 32.52, "p": 672.2}, {"d": "2026-07-04", "b": 8.32, "h": 24.28, "p": 498.5}, {"d": "2026-07-05", "b": 3.47, "h": 22.31, "p": 588.4}, {"d": "2026-07-06", "b": 11.0, "h": 28.64, "p": 551.1}, {"d": "2026-07-07", "b": 13.03, "h": 40.3, "p": 851.5}, {"d": "2026-07-08", "b": 23.73, "h": 67.33, "p": 1361.6}, {"d": "2026-07-09", "b": 11.0, "h": 16.87, "p": 183.4}, {"d": "2026-07-10", "b": 11.0, "h": 20.75, "p": 304.5}, {"d": "2026-07-11", "b": 11.0, "h": 19.77, "p": 273.9}, {"d": "2026-07-12", "b": 11.0, "h": 10.07, "p": -29.2}, {"d": "2026-07-13", "b": 8.08, "h": 11.19, "p": 97.2}, {"d": "2026-07-14", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-07-15", "b": 11.0, "h": 43.95, "p": 1029.1}, {"d": "2026-07-16", "b": 11.0, "h": 18.52, "p": 234.8}, {"d": "2026-07-17", "b": 11.0, "h": 50.52, "p": 1234.3}, {"d": "2026-07-18", "b": 50.97, "h": 45.74, "p": -163.4}, {"d": "2026-07-19", "b": 20.73, "h": 55.44, "p": 1083.9}, {"d": "2026-07-20", "b": 36.07, "h": 39.04, "p": 92.9}, {"d": "2026-07-21", "b": 11.0, "h": 10.08, "p": -28.7}, {"d": "2026-07-22", "b": 11.0, "h": 12.25, "p": 39.0}, {"d": "2026-07-23", "b": 11.0, "h": 12.11, "p": 34.6}, {"d": "2026-07-24", "b": 11.0, "h": 2.53, "p": -264.5}, {"d": "2026-07-25", "b": 11.0, "h": 6.23, "p": -148.9}, {"d": "2026-07-26", "b": 11.0, "h": 25.95, "p": 466.8}, {"d": "2026-07-27", "b": 16.37, "h": 13.18, "p": -99.5}, {"d": "2026-07-28", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-07-29", "b": 10.62, "h": -6.45, "p": -533.3}, {"d": "2026-07-30", "b": 11.0, "h": -12.44, "p": -732.1}, {"d": "2026-07-31", "b": -18.47, "h": -33.91, "p": -482.3}, {"d": "2026-08-01", "b": -8.07, "h": -30.93, "p": -714.1}, {"d": "2026-08-02", "b": -9.13, "h": 6.8, "p": 497.5}, {"d": "2026-08-03", "b": 11.0, "h": 10.91, "p": -2.7}, {"d": "2026-08-04", "b": 11.0, "h": 6.75, "p": -132.8}, {"d": "2026-08-05", "b": 5.49, "h": -0.63, "p": -191.1}, {"d": "2026-08-06", "b": -2.0, "h": 5.37, "p": 230.1}, {"d": "2026-08-07", "b": 0.11, "h": 4.35, "p": 132.5}, {"d": "2026-08-08", "b": 9.18, "h": 11.34, "p": 67.4}, {"d": "2026-08-09", "b": 9.08, "h": 125.4, "p": 3632.9}, {"d": "2026-08-10", "b": 52.63, "h": 117.2, "p": 2016.5}, {"d": "2026-08-11", "b": 18.77, "h": 87.01, "p": 2131.3}, {"d": "2026-08-12", "b": 46.67, "h": 43.76, "p": -90.8}, {"d": "2026-08-13", "b": 21.37, "h": 32.88, "p": 359.5}, {"d": "2026-08-14", "b": 20.77, "h": 19.17, "p": -50.0}, {"d": "2026-08-15", "b": 11.0, "h": 16.83, "p": 182.2}, {"d": "2026-08-16", "b": 11.0, "h": 31.36, "p": 636.0}, {"d": "2026-08-17", "b": 23.3, "h": 35.52, "p": 381.8}, {"d": "2026-08-18", "b": 11.0, "h": 20.99, "p": 311.9}, {"d": "2026-08-19", "b": 19.93, "h": 29.13, "p": 287.2}, {"d": "2026-08-20", "b": 16.3, "h": 41.72, "p": 793.9}, {"d": "2026-08-21", "b": 50.13, "h": 147.37, "p": 3037.0}, {"d": "2026-08-22", "b": 82.03, "h": 166.47, "p": 2637.3}, {"d": "2026-08-23", "b": 18.6, "h": 58.53, "p": 1247.0}, {"d": "2026-08-24", "b": 12.73, "h": 34.56, "p": 681.7}, {"d": "2026-08-25", "b": 33.53, "h": 46.15, "p": 394.2}, {"d": "2026-08-26", "b": 11.17, "h": 12.14, "p": 30.5}, {"d": "2026-08-27", "b": 32.9, "h": 27.02, "p": -183.5}, {"d": "2026-08-28", "b": 54.3, "h": 62.53, "p": 256.9}, {"d": "2026-08-29", "b": 53.4, "h": 69.66, "p": 507.9}, {"d": "2026-08-30", "b": 70.2, "h": 132.28, "p": 1938.8}, {"d": "2026-08-31", "b": 101.4, "h": 117.58, "p": 505.3}, {"d": "2026-09-01", "b": 25.13, "h": 39.2, "p": 439.3}, {"d": "2026-09-02", "b": 33.53, "h": 71.38, "p": 1182.1}, {"d": "2026-09-03", "b": 16.1, "h": 16.47, "p": 11.5}, {"d": "2026-09-04", "b": 98.8, "h": 89.29, "p": -297.1}, {"d": "2026-09-05", "b": 104.73, "h": 65.24, "p": -1233.4}, {"d": "2026-09-06", "b": 69.87, "h": 83.21, "p": 416.9}, {"d": "2026-09-07", "b": 53.6, "h": 30.34, "p": -726.3}, {"d": "2026-09-08", "b": 23.4, "h": 34.29, "p": 340.0}, {"d": "2026-09-09", "b": 14.87, "h": 20.34, "p": 171.1}, {"d": "2026-09-10", "b": 11.0, "h": 4.75, "p": -195.3}, {"d": "2026-09-11", "b": 11.0, "h": 21.58, "p": 330.4}, {"d": "2026-09-12", "b": 22.03, "h": 21.18, "p": -26.5}, {"d": "2026-09-13", "b": 24.3, "h": 31.45, "p": 223.2}, {"d": "2026-09-14", "b": 11.0, "h": 8.93, "p": -64.6}, {"d": "2026-09-15", "b": 11.0, "h": 10.46, "p": -16.9}, {"d": "2026-09-16", "b": 11.0, "h": 10.32, "p": -21.4}, {"d": "2026-09-17", "b": 11.0, "h": 13.34, "p": 72.9}, {"d": "2026-09-18", "b": 47.83, "h": 88.96, "p": 1284.5}, {"d": "2026-09-19", "b": 75.07, "h": 59.99, "p": -470.9}, {"d": "2026-09-20", "b": 11.43, "h": 18.17, "p": 210.3}, {"d": "2026-09-21", "b": 77.93, "h": 97.07, "p": 597.6}, {"d": "2026-09-22", "b": 34.83, "h": 80.81, "p": 1436.0}, {"d": "2026-09-23", "b": 24.63, "h": 40.13, "p": 484.1}, {"d": "2026-09-24", "b": 11.0, "h": 25.55, "p": 454.4}, {"d": "2026-09-25", "b": 22.17, "h": 27.01, "p": 151.2}, {"d": "2026-09-26", "b": 11.0, "h": 10.95, "p": -1.6}, {"d": "2026-09-27", "b": 11.0, "h": 2.37, "p": -269.5}, {"d": "2026-09-28", "b": 11.0, "h": -0.41, "p": -356.3}, {"d": "2026-09-29", "b": 11.0, "h": 3.75, "p": -226.5}, {"d": "2026-09-30", "b": 11.0, "h": 12.01, "p": 31.5}, {"d": "2026-10-01", "b": 11.0, "h": 14.79, "p": 118.3}, {"d": "2026-10-02", "b": 11.47, "h": 26.23, "p": 461.1}, {"d": "2026-10-03", "b": 11.0, "h": 34.47, "p": 733.2}, {"d": "2026-10-04", "b": 12.63, "h": 33.57, "p": 653.9}, {"d": "2026-10-05", "b": 11.0, "h": 30.16, "p": 598.5}, {"d": "2026-10-06", "b": 14.97, "h": 29.5, "p": 454.1}, {"d": "2026-10-07", "b": 11.0, "h": 18.5, "p": 234.2}, {"d": "2026-10-08", "b": 11.0, "h": 10.95, "p": -1.5}, {"d": "2026-10-09", "b": 11.0, "h": 10.7, "p": -9.4}, {"d": "2026-10-10", "b": 11.0, "h": 4.79, "p": -194.0}, {"d": "2026-10-11", "b": 11.0, "h": -12.53, "p": -734.8}, {"d": "2026-10-12", "b": 11.0, "h": 15.75, "p": 148.3}, {"d": "2026-10-13", "b": 11.0, "h": -1.52, "p": -391.1}, {"d": "2026-10-14", "b": 10.66, "h": 5.25, "p": -169.0}, {"d": "2026-10-15", "b": 11.0, "h": 9.61, "p": -43.3}, {"d": "2026-10-16", "b": 11.0, "h": 10.24, "p": -23.7}, {"d": "2026-10-17", "b": 11.0, "h": 7.08, "p": -122.5}, {"d": "2026-10-18", "b": 11.0, "h": 1.34, "p": -301.8}, {"d": "2026-10-19", "b": 11.0, "h": -13.17, "p": -755.0}, {"d": "2026-10-20", "b": 12.17, "h": 44.29, "p": 1003.4}, {"d": "2026-10-21", "b": 11.0, "h": 11.01, "p": 0.3}, {"d": "2026-10-22", "b": 25.97, "h": 80.82, "p": 1713.4}, {"d": "2026-10-23", "b": 11.0, "h": 19.93, "p": 278.9}, {"d": "2026-10-24", "b": 11.0, "h": 16.01, "p": 156.4}, {"d": "2026-10-25", "b": 16.17, "h": 52.13, "p": 1123.2}, {"d": "2026-10-26", "b": 11.0, "h": 17.73, "p": 210.1}, {"d": "2026-10-27", "b": 11.0, "h": 28.83, "p": 557.0}, {"d": "2026-10-28", "b": 11.0, "h": 38.6, "p": 861.9}, {"d": "2026-10-29", "b": 11.0, "h": 63.1, "p": 1627.4}, {"d": "2026-10-30", "b": 54.53, "h": 75.88, "p": 666.7}, {"d": "2026-10-31", "b": 44.17, "h": 78.57, "p": 1074.4}, {"d": "2026-11-01", "b": 28.23, "h": 30.74, "p": 78.4}, {"d": "2026-11-02", "b": 11.0, "h": 9.13, "p": -58.5}, {"d": "2026-11-03", "b": 11.0, "h": 14.73, "p": 116.3}, {"d": "2026-11-04", "b": 14.13, "h": 32.29, "p": 567.2}, {"d": "2026-11-05", "b": 44.77, "h": 110.82, "p": 2063.1}, {"d": "2026-11-06", "b": 26.47, "h": 45.15, "p": 583.5}, {"d": "2026-11-07", "b": 30.8, "h": 55.32, "p": 765.8}, {"d": "2026-11-08", "b": 11.0, "h": 72.71, "p": 1927.2}, {"d": "2026-11-09", "b": 56.7, "h": 77.46, "p": 648.4}, {"d": "2026-11-10", "b": 11.0, "h": 5.02, "p": -186.7}, {"d": "2026-11-11", "b": 11.0, "h": 85.4, "p": 2323.8}, {"d": "2026-11-12", "b": 70.43, "h": 485.79, "p": 12972.7}, {"d": "2026-11-13", "b": 18.57, "h": 133.65, "p": 3594.5}, {"d": "2026-11-14", "b": 7.0, "h": -58.4, "p": -2042.6}, {"d": "2026-11-15", "b": 11.0, "h": 10.43, "p": -17.8}, {"d": "2026-11-16", "b": 10.63, "h": -26.85, "p": -1170.6}, {"d": "2026-11-17", "b": 18.53, "h": -16.07, "p": -1080.6}, {"d": "2026-11-18", "b": 11.0, "h": 9.35, "p": -51.5}, {"d": "2026-11-19", "b": 16.0, "h": 22.79, "p": 212.2}, {"d": "2026-11-20", "b": 11.0, "h": 7.78, "p": -100.7}, {"d": "2026-11-21", "b": 13.33, "h": 23.64, "p": 321.9}, {"d": "2026-11-22", "b": 11.0, "h": 17.76, "p": 211.3}, {"d": "2026-11-23", "b": 11.0, "h": 22.25, "p": 351.3}, {"d": "2026-11-24", "b": 11.0, "h": 14.55, "p": 110.9}];
+const N=1140000;
+let cum=0;D.forEach(r=>{cum+=r.p;r.c=cum;r.t=Date.parse(r.d+'T00:00:00Z')});
+const byD=Object.fromEntries(D.map(r=>[r.d,r]));
+const SP=['2026-11-12','2026-11-13'],DD=['2026-11-14','2026-11-18'];
+const usd=(v,d=1)=>{const a=Math.abs(v),s=v<0?'−':(v>0?'+':'');return a>=1000?s+'$'+(a/1000).toFixed(d)+'k':s+'$'+a.toFixed(0)};
+const usdp=v=>'$'+(v/1000).toFixed(1)+'k';
+const pct=v=>(v<0?'−':'')+Math.abs(v).toFixed(0)+'%';
+const md=s=>new Date(s+'T00:00:00Z').toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'});
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sum=(a,b)=>D.filter(r=>r.d>=a&&r.d<=b).reduce((x,r)=>x+r.p,0);
+const spike=sum(...SP),dd=sum(...DD),peak=byD[SP[1]].c,trough=byD[DD[1]].c,last=D[D.length-1];
+document.getElementById('figs').innerHTML=[
+ [usd(spike),'Made on 12–13 Nov'],[usd(dd),'Given back 14–18 Nov ('+Math.round(-dd/spike*100)+'% of the spike)'],
+ [usd(trough-byD['2026-11-11'].c),'Still above the pre-spike level at the lowest point'],[usdp(last.c),'Cumulative funding since 16 Jan, to 24 Nov']
+].map(([a,b])=>`<div><div class="big">${esc(a)}</div><small>${esc(b)}</small></div>`).join('');
+
+const T=Date.parse('2026-11-25T00:00:00Z')-Date.parse('2026-11-24T00:00:00Z');
+function ticks(lo,hi,n){const step=Math.pow(10,Math.floor(Math.log10((hi-lo)/n)));const m=[1,2,2.5,5,10].find(k=>(hi-lo)/(step*k)<=n)*step;const out=[];for(let v=Math.ceil(lo/m)*m;v<=hi+1e-9;v+=m)out.push(+v.toFixed(6));return out}
+function tipper(el){const t=document.createElement('div');t.className='tip';t.hidden=true;el.appendChild(t);return(html,x,y)=>{if(html==null){t.hidden=true;return}t.innerHTML=html;t.hidden=false;const W=el.clientWidth;const w=t.offsetWidth;t.style.left=Math.max(0,Math.min(W-w,x+14))+'px';t.style.top=Math.max(0,y-10)+'px'}}
+function dayTip(r){return `<b>${md(r.d)}</b><br><i style="background:var(--s1)"></i>Hyperliquid ${pct(r.h)}<br><i style="background:var(--s2)"></i>Binance ${pct(r.b)}<br>Spread ${pct(r.h-r.b)} · P&amp;L <b>${usd(r.p)}</b><br>Cumulative ${usdp(r.c)}`}
+function band(x,a,b,cls,y0,y1){return `<rect x="${x(Date.parse(a+'T00:00:00Z')-T/2)}" y="${y0}" width="${x(Date.parse(b+'T00:00:00Z')+T/2)-x(Date.parse(a+'T00:00:00Z')-T/2)}" height="${y1-y0}" fill="var(${cls})"/>`}
+
+function chart(id,rows,draw){const el=document.getElementById(id);const tip=tipper(el);const svgWrap=document.createElement('div');svgWrap.style.cssText='position:absolute;inset:0';el.appendChild(svgWrap);
+ const ro=new ResizeObserver(()=>draw(svgWrap,el.clientWidth,el.clientHeight,tip));ro.observe(el)}
+
+// main cumulative chart
+chart('main',D,(w,W,H,tip)=>{
+ const m={l:50,r:W<520?14:110,t:16,b:28};const t0=D[0].t,t1=last.t;
+ const x=t=>m.l+(t-t0)/(t1-t0)*(W-m.l-m.r);const ymax=Math.ceil(peak/20000)*20000;const y=v=>m.t+(1-v/ymax)*(H-m.t-m.b);
+ const yt=ticks(0,ymax,4);const months=[];for(let mo=1;mo<=10;mo++){const t=Date.UTC(2026,mo,1);if(t>t0&&t<t1)months.push(t)}
+ const path=D.map((r,i)=>(i?'L':'M')+x(r.t).toFixed(1)+','+y(r.c).toFixed(1)).join('');
+ const area=path+`L${x(t1)},${y(0)}L${x(t0)},${y(0)}Z`;
+ const pk=byD[SP[1]];
+ w.innerHTML=`<svg>${band(x,...SP,'--spike',m.t,H-m.b)}${band(x,...DD,'--dd',m.t,H-m.b)}
+ ${yt.map(v=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--rule)"/><text x="${m.l-8}" y="${y(v)+4}" text-anchor="end">${v?'$'+v/1000+'k':'$0'}</text>`).join('')}
+ ${months.filter((t,i)=>W>=520||i%2==0).map(t=>`<text x="${x(t)}" y="${H-8}" text-anchor="middle">${new Date(t).toLocaleDateString('en-GB',{month:'short',timeZone:'UTC'})}</text>`).join('')}
+ <line x1="${m.l}" x2="${W-m.r}" y1="${y(0)}" y2="${y(0)}" stroke="var(--axis)"/>
+ <path d="${area}" fill="var(--s1)" opacity=".08"/><path d="${path}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>
+ <circle cx="${x(pk.t)}" cy="${y(pk.c)}" r="4" fill="var(--s1)" stroke="var(--bg)" stroke-width="2"/>
+ <circle cx="${x(last.t)}" cy="${y(last.c)}" r="4" fill="var(--s1)" stroke="var(--bg)" stroke-width="2"/>
+ ${W>=520?`<text class="lab" x="${x(last.t)+10}" y="${y(peak)-14}">Peak ${usdp(peak)}</text><text x="${x(last.t)+10}" y="${y(peak)+2}">13 Nov</text><text class="lab" x="${x(last.t)+10}" y="${y(last.c)+22}">${usdp(last.c)}</text><text x="${x(last.t)+10}" y="${y(last.c)+38}">24 Nov</text>`:''}
+ <line id="mx" y1="${m.t}" y2="${H-m.b}" stroke="var(--axis)" visibility="hidden"/><circle id="md" r="5" fill="var(--s1)" stroke="var(--bg)" stroke-width="2" visibility="hidden"/>
+ <rect x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent" id="hit"/></svg>`;
+ const sv=w.querySelector('svg'),mx=sv.querySelector('#mx'),dot=sv.querySelector('#md');
+ sv.querySelector('#hit').addEventListener('pointermove',e=>{const bx=sv.getBoundingClientRect();const px=e.clientX-bx.left;const t=t0+(px-m.l)/(W-m.l-m.r)*(t1-t0);let i=Math.round((t-t0)/T);i=Math.max(0,Math.min(D.length-1,i));const r=D[i];
+  mx.setAttribute('x1',x(r.t));mx.setAttribute('x2',x(r.t));mx.setAttribute('visibility','visible');dot.setAttribute('cx',x(r.t));dot.setAttribute('cy',y(r.c));dot.setAttribute('visibility','visible');tip(dayTip(r),x(r.t),e.clientY-bx.top)});
+ sv.querySelector('#hit').addEventListener('pointerleave',()=>{mx.setAttribute('visibility','hidden');dot.setAttribute('visibility','hidden');tip(null)});
+});
+
+const Z=D.filter(r=>r.d>='2026-10-20');
+// daily P&L bars
+chart('bars',Z,(w,W,H,tip)=>{
+ const m={l:50,r:10,t:16,b:28};const lo=-4000,hi=14000;const y=v=>m.t+(hi-v)/(hi-lo)*(H-m.t-m.b);
+ const bw=(W-m.l-m.r)/Z.length;const x=i=>m.l+i*bw;const g=Math.min(2,bw*.2);
+ const yt=[-4000,0,4000,8000,12000];
+ const bars=Z.map((r,i)=>{const y0=y(0),y1=y(r.p);const top=Math.min(y0,y1),h=Math.max(1,Math.abs(y1-y0));const rr=Math.min(4,h/2,(bw-g)/2);
+  const x0=x(i)+g/2,ww=bw-g;const col=r.p<0?'var(--neg)':'var(--s1)';
+  const d=r.p>=0?`M${x0},${top+h}V${top+rr}Q${x0},${top} ${x0+rr},${top}H${x0+ww-rr}Q${x0+ww},${top} ${x0+ww},${top+rr}V${top+h}Z`:`M${x0},${top}V${top+h-rr}Q${x0},${top+h} ${x0+rr},${top+h}H${x0+ww-rr}Q${x0+ww},${top+h} ${x0+ww},${top+h-rr}V${top}Z`;
+  return `<path d="${d}" fill="${col}"/><rect class="h" data-i="${i}" x="${x(i)}" y="${m.t}" width="${bw}" height="${H-m.t-m.b}" fill="transparent"/>`}).join('');
+ const iS=Z.findIndex(r=>r.d===SP[0]),iD=Z.findIndex(r=>r.d===DD[0]),iE=Z.findIndex(r=>r.d===DD[1]);
+ const dates=Z.map((r,i)=>[r,i]).filter(([r])=>['2026-10-20','2026-11-01','2026-11-12','2026-11-24'].includes(r.d));
+ w.innerHTML=`<svg><rect x="${x(iS)}" y="${m.t}" width="${bw*2}" height="${H-m.t-m.b}" fill="var(--spike)"/><rect x="${x(iD)}" y="${m.t}" width="${bw*(iE-iD+1)}" height="${H-m.t-m.b}" fill="var(--dd)"/>
+ ${yt.map(v=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${v?'var(--rule)':'var(--axis)'}"/><text x="${m.l-8}" y="${y(v)+4}" text-anchor="end">${v<0?'−$'+(-v/1000)+'k':v?'$'+v/1000+'k':'$0'}</text>`).join('')}
+ ${dates.map(([r,i])=>`<text x="${x(i)+bw/2}" y="${H-8}" text-anchor="middle">${md(r.d)}</text>`).join('')}
+ ${bars}
+ <text class="lab" x="${x(iS)-6}" y="${y(Z[iS].p)+12}" text-anchor="end">+$13.0k</text>
+ <text class="lab" x="${x(iE)+bw+4}" y="${y(-2000)+4}">−$4.4k</text></svg>`;
+ w.querySelectorAll('.h').forEach(h=>{h.addEventListener('pointermove',e=>{const b=w.getBoundingClientRect();tip(dayTip(Z[+h.dataset.i]),e.clientX-b.left,e.clientY-b.top)});h.addEventListener('pointerleave',()=>tip(null))});
+});
+
+// funding lines
+chart('lines',Z,(w,W,H,tip)=>{
+ const m={l:50,r:W<520?12:92,t:16,b:28};const lo=-100,hi=500;const y=v=>m.t+(hi-v)/(hi-lo)*(H-m.t-m.b);
+ const x=i=>m.l+i/(Z.length-1)*(W-m.l-m.r);const yt=[-100,0,100,200,300,400,500];
+ const ln=k=>Z.map((r,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(r[k]).toFixed(1)).join('');
+ const iS=Z.findIndex(r=>r.d===SP[0]),iD=Z.findIndex(r=>r.d===DD[0]),iE=Z.findIndex(r=>r.d===DD[1]);const st=(W-m.l-m.r)/(Z.length-1);
+ const dates=Z.map((r,i)=>[r,i]).filter(([r])=>['2026-10-20','2026-11-01','2026-11-12','2026-11-24'].includes(r.d));
+ const L=Z[Z.length-1];
+ w.innerHTML=`<svg><rect x="${x(iS)-st/2}" y="${m.t}" width="${st*2}" height="${H-m.t-m.b}" fill="var(--spike)"/><rect x="${x(iD)-st/2}" y="${m.t}" width="${st*(iE-iD+1)}" height="${H-m.t-m.b}" fill="var(--dd)"/>
+ ${yt.map(v=>`<line x1="${m.l}" x2="${W-m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${v?'var(--rule)':'var(--axis)'}"/><text x="${m.l-8}" y="${y(v)+4}" text-anchor="end">${pct(v)}</text>`).join('')}
+ ${dates.map(([r,i])=>`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${md(r.d)}</text>`).join('')}
+ <path d="${ln('b')}" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/>
+ <path d="${ln('h')}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>
+ <circle cx="${x(iS)}" cy="${y(Z[iS].h)}" r="4" fill="var(--s1)" stroke="var(--bg)" stroke-width="2"/>
+ <text class="lab" x="${x(iS)-8}" y="${y(Z[iS].h)+5}" text-anchor="end">486%</text>
+ <text x="${x(iD)+4}" y="${y(Z[iD].h)+18}">${pct(Z[iD].h)}</text>
+ ${W>=520?`<text class="lab" x="${x(Z.length-1)+8}" y="${y(L.h)-6}">Hyperliquid</text><text class="lab" x="${x(Z.length-1)+8}" y="${y(L.b)+14}">Binance</text>`:''}
+ <line id="lx" y1="${m.t}" y2="${H-m.b}" stroke="var(--axis)" visibility="hidden"/>
+ <rect id="lh" x="${m.l}" y="0" width="${W-m.l-m.r}" height="${H}" fill="transparent"/></svg>`;
+ const sv=w.querySelector('svg'),lx=sv.querySelector('#lx');
+ sv.querySelector('#lh').addEventListener('pointermove',e=>{const b=sv.getBoundingClientRect();let i=Math.round((e.clientX-b.left-m.l)/st);i=Math.max(0,Math.min(Z.length-1,i));lx.setAttribute('x1',x(i));lx.setAttribute('x2',x(i));lx.setAttribute('visibility','visible');tip(dayTip(Z[i]),x(i),e.clientY-b.top)});
+ sv.querySelector('#lh').addEventListener('pointerleave',()=>{lx.setAttribute('visibility','hidden');tip(null)});
+});
+
+// table
+const TR=D.filter(r=>r.d>='2026-11-10'&&r.d<='2026-11-20');
+document.getElementById('tbl').innerHTML='<thead><tr><th>Day</th><th>Hyperliquid</th><th>Binance</th><th>Spread</th><th>P&amp;L</th><th>Cumulative</th></tr></thead><tbody>'+
+ TR.map(r=>`<tr class="${SP.includes(r.d)?'sp':(r.d>=DD[0]&&r.d<=DD[1]?'dd':'')}"><td>${md(r.d)}</td><td${r.h<0?' class="neg"':''}>${pct(r.h)}</td><td>${pct(r.b)}</td><td${r.h-r.b<0?' class="neg"':''}>${pct(r.h-r.b)}</td><td${r.p<0?' class="neg"':''}>${usd(r.p)}</td><td>${usdp(r.c)}</td></tr>`).join('')+'</tbody>';
+}
+</script>
