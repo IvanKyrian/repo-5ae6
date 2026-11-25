@@ -3,39 +3,60 @@
 Usage:
   python3 -I screen.py --data "<folder with funding CSVs>" --positions other.xlsx --end 2026-11-24 --out .
 
-Input CSVs: one per venue/symbol, columns Time, funding_rate (annualized, e.g. "11.0%").
-Each row is one settlement. Binance oil settles every 4h, Binance XMR/ZEC every 8h,
-Hyperliquid every 1h.
+Exported CSVs (--data): one per venue/symbol, columns Time (Europe/London local time),
+funding_rate (annualized, e.g. "11.0%"). One row per settlement: Binance oil every 4h,
+Binance XMR/ZEC every 8h, Hyperliquid every 1h. The first 24h of each export are
+understated by the export tool, so they are dropped.
+
+API CSVs (data/, from fetch_api.py): columns t (UTC), rate (per settlement), hours.
+Used for ZEC, to start it on 2 Oct 2025 (Hyperliquid listing). Where an API file ends,
+the exported file takes over (Binance's monthly archive stops at the last full month).
 """
 import argparse, glob, json, os
 import pandas as pd
 
 LEVERAGE = 5
 APR_MULT = LEVERAGE / 2  # leg notional / total margin (both legs at 5x) = 2.5
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 ARBS = [
-    # name, long (Binance) file prefix, short (Hyperliquid) file prefix, interval h of Binance, start override
-    ("Brent", "Binance_BZUSDT", "HyperLiquid_BRENTOIL", 4, "2026-05-01"),
-    ("WTI", "Binance_CLUSDT", "HyperLiquid_WTIOIL", 4, "2026-05-01"),
-    ("XMR", "Binance_XMRUSDT", "HyperLiquid_XMR", 8, "2026-01-16"),  # 15 Jan: HL data starts 09:00 (partial day)
-    ("ZEC", "Binance_ZECUSDT", "HyperLiquid_ZEC", 8, None),
+    # name, Binance export prefix, Hyperliquid export prefix, Binance interval h, start, Binance API file, HL API file
+    ("Brent", "Binance_BZUSDT", "HyperLiquid_BRENTOIL", 4, "2026-05-01", None, None),  # April excluded
+    ("WTI", "Binance_CLUSDT", "HyperLiquid_WTIOIL", 4, "2026-05-01", None, None),  # April excluded
+    ("XMR", "Binance_XMRUSDT", "HyperLiquid_XMR", 8, "2026-01-16", None, "hl_XMR.csv"),  # HL lists XMR 15 Jan 09:00 UTC; API covers the first 24h the export gets wrong
+    ("ZEC", "Binance_ZECUSDT", "HyperLiquid_ZEC", 8, "2025-10-03", "bn_ZECUSDT.csv", "hl_ZEC.csv"),  # HL lists ZEC 2 Oct 14:00 UTC
 ]
 
-# Rows in the positions sheet: (Binance row asset, Hyperliquid row asset). The sheet lists
-# WTI as "CL / Hyperliquid" and "WTI / Binance"; CL is the Binance ticker, so the platform
-# labels look swapped. We take Binance = CL row's OI, Hyperliquid = WTI row's OI (see README).
+# Positions sheet rows: (Binance asset, Hyperliquid asset)
 POS = {"Brent": ("BZ", "BRENT"), "WTI": ("CL", "WTI"), "XMR": ("XMR", "XMR"), "ZEC": ("ZEC", "ZEC")}
 
 
-def daily(folder, prefix, interval_h):
+def export_settlements(folder, prefix, interval_h):
     f = glob.glob(os.path.join(folder, prefix + "*.csv"))
     assert len(f) == 1, (prefix, f)
     d = pd.read_csv(f[0])
-    d["t"] = pd.to_datetime(d["Time"])
-    d["r"] = d["funding_rate"].str.rstrip("%").astype(float) / 100  # annualized
-    d["ret"] = d["r"] * interval_h / 8760  # funding actually paid in that settlement, fraction of notional
-    d["date"] = d["t"].dt.normalize()
-    return d.groupby("date").agg(ret=("ret", "sum"), n=("r", "size"))
+    t = pd.to_datetime(d["Time"])
+    first_of_repeat = (~t.duplicated(keep="first")).values  # repeated 01:00 on the autumn clock change: first is BST
+    d["t"] = t.dt.tz_localize("Europe/London", ambiguous=first_of_repeat, nonexistent="shift_forward").dt.tz_convert(None)
+    d = d[d["t"] >= d["t"].min() + pd.Timedelta(hours=24)]
+    d["ret"] = d["funding_rate"].str.rstrip("%").astype(float) / 100 * interval_h / 8760
+    return d[["t", "ret"]]
+
+
+def api_settlements(name):
+    d = pd.read_csv(os.path.join(HERE, "data", name), parse_dates=["t"])
+    d["ret"] = d["rate"]  # already the per-settlement rate
+    return d[["t", "ret"]]
+
+
+def daily(folder, prefix, interval_h, api_file=None):
+    s = export_settlements(folder, prefix, interval_h)
+    if api_file:
+        a = api_settlements(api_file)
+        s = pd.concat([a, s[s["t"] > a["t"].max()]])
+    s = s.drop_duplicates("t").sort_values("t")
+    s["date"] = s["t"].dt.normalize()
+    return s.groupby("date").agg(ret=("ret", "sum"), n=("ret", "size"))
 
 
 def drawdown(s):
@@ -84,9 +105,9 @@ def main():
     pos = pos.dropna(subset=["asset"])
 
     rows, checks = [], []
-    for name, bfile, hfile, bint, start in ARBS:
-        B = daily(a.data, bfile, bint)
-        H = daily(a.data, hfile, 1)
+    for name, bfile, hfile, bint, start, bapi, hapi in ARBS:
+        B = daily(a.data, bfile, bint, bapi)
+        H = daily(a.data, hfile, 1, hapi)
         j = B.join(H, lsuffix="_bin", rsuffix="_hl", how="inner")
         first_both = j.index.min()
         if start:
@@ -95,7 +116,7 @@ def main():
         s = j["ret_hl"] - j["ret_bin"]  # short HL receives HL funding, long Binance pays Binance funding
 
         exp_bin = 24 // bint
-        bad = j[(j.n_bin != exp_bin) | (~j.n_hl.isin([23, 24, 25]))]
+        bad = j[(j.n_bin != exp_bin) | (j.n_hl != 24)]
         gaps = pd.date_range(j.index.min(), j.index.max()).difference(j.index)
         checks.append(f"{name}: {len(j)} days {j.index.min().date()}..{j.index.max().date()}, "
                       f"days with unexpected settlement count: {len(bad)}, missing days: {len(gaps)}")
@@ -105,8 +126,8 @@ def main():
         dd = drawdown(s)
 
         bn, hn = POS[name]
-        pb = pos[(pos.asset == bn) & (pos.platform == "Binance")].iloc[0] if name != "WTI" else pos[pos.asset == "CL"].iloc[0]
-        ph = pos[(pos.asset == hn) & (pos.platform == "Hyperliquid")].iloc[0] if name != "WTI" else pos[pos.asset == "WTI"].iloc[0]
+        pb = pos[(pos.asset == bn) & (pos.platform == "Binance")].iloc[0]
+        ph = pos[(pos.asset == hn) & (pos.platform == "Hyperliquid")].iloc[0]
         n_bin, n_hl = float(pb.notional), float(ph.notional)
         hedged = min(n_bin, n_hl)
         rows.append(dict(
@@ -132,7 +153,7 @@ def main():
             oi_bin=float(pb.oi), oi_pct_bin=n_bin / float(pb.oi),
             oi_hl=float(ph.oi), oi_pct_hl=n_hl / float(ph.oi),
             dd_pnl_current=dd["depth"] * hedged,
-            dd_pct_margin=dd["depth"] * APR_MULT,
+            dd_pct_portfolio=dd["depth"] * hedged / aum,
         ))
 
     df = pd.DataFrame(rows)
