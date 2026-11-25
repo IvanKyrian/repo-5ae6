@@ -1,0 +1,177 @@
+<title>Funding Arb Screening</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: a screening table for the PM team
+   IDEA a trading desk risk sheet: one finding, one strip chart, three ruled tables
+   PICTURE dot strip of implied APR per arb across 7d / 30d / 90d / inception
+   COLOUR white and black, one mint field for the headline figures, mint-dark marks
+   TYPE Space Grotesk 700 + Inter
+   LAYOUT title and finding top left, mint figures right; chart full width; tables; method */
+:root{color-scheme:light dark;--bg:light-dark(#ffffff,#0b0b0b);--ink:light-dark(#0b0b0b,#f2f2f2);--mute:light-dark(#5c5c5c,#a3a3a3);--rule:light-dark(#e3e3e3,#2a2a2a);--mint:light-dark(#b8f5d0,#123d27);--mintink:light-dark(#0b0b0b,#b8f5d0);--dot:light-dark(#0a7a45,#5fe39a);--neg:light-dark(#b3261e,#ff8a80)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;margin:0;overflow-x:clip}
+h1,h2,.big{font-family:"Space Grotesk",Inter,sans-serif;letter-spacing:-.02em;line-height:1.05;margin:0}
+h1{font-size:clamp(32px,4.4vw,48px);font-weight:700;max-width:18ch}
+h2{font-size:24px;font-weight:700;margin-bottom:6px}
+p{margin:0}
+.band{padding-block:clamp(24px,3.5vw,48px);padding-left:max(5vw,16px,env(safe-area-inset-left,0px));padding-right:max(5vw,16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1240px;margin:0 auto}
+.top{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:clamp(20px,4vw,56px);align-items:stretch}
+.lede{color:var(--mute);margin-top:14px;max-width:60ch}
+.lede b{color:var(--ink);font-weight:600}
+.figs{background:var(--mint);color:var(--mintink);padding:22px 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px;align-content:center}
+.big{font-size:clamp(30px,3.4vw,42px);font-weight:700;white-space:nowrap}
+.figs small{display:block;font-size:13px;line-height:1.35;margin-top:4px}
+.chart{margin-top:clamp(24px,3vw,36px);border-top:1px solid var(--ink);padding-top:14px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--mute);margin-bottom:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.strip{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:center;height:46px;border-bottom:1px solid var(--rule)}
+.strip b{font-family:"Space Grotesk",sans-serif;font-size:17px}
+.track{position:relative;height:100%}
+.m{position:absolute;top:50%;transform:translate(-50%,-50%);border-radius:50%}
+.m.d7{width:14px;height:14px;background:var(--dot)}
+.m.d30{width:12px;height:12px;border:2px solid var(--dot);background:var(--bg)}
+.m.d90{width:12px;height:12px;background:var(--mute)}
+.m.inc{width:4px;height:26px;border-radius:0;background:var(--ink)}
+.axis{display:grid;grid-template-columns:72px minmax(0,1fr);font-size:13px;color:var(--mute);height:22px}
+.axis .track span{position:absolute;transform:translateX(-50%);top:4px}
+.k{display:inline-block}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+th{font-weight:600;text-align:right;font-size:13px;color:var(--mute);padding:8px 10px;border-bottom:1px solid var(--ink);vertical-align:bottom}
+td{text-align:right;padding:9px 10px;border-bottom:1px solid var(--rule);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td:first-child{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:15px}
+th.g{text-align:center;border-bottom:1px solid var(--rule);color:var(--ink)}
+.neg{color:var(--neg)}
+.sub{color:var(--mute);font-size:13px}
+.tables{display:grid;gap:clamp(28px,3vw,40px)}
+.cap{color:var(--mute);font-size:14px;margin-bottom:10px;max-width:80ch}
+.method{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(20px,4vw,56px);border-top:1px solid var(--ink);padding-top:20px}
+ol,ul{margin:8px 0 0;padding-left:20px}
+li{margin-bottom:8px}
+li::marker{color:var(--mute)}
+code{font-size:14px}
+@media(max-width:820px){.top,.method{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){table{font-size:13px}th,td{padding:6px 5px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--rule)}.stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:3px 0;white-space:normal}.stack td::before{content:attr(data-l);color:var(--mute);font-family:Inter,sans-serif;font-weight:400;font-size:13px}.strip,.axis{grid-template-columns:52px minmax(0,1fr)}}
+</style>
+
+<div class="band"><div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Funding spreads have halved: 7d implied APR is 10–13% on every arb</h1>
+      <p class="lede">Long Binance, short Hyperliquid on Brent, WTI, XMR and ZEC. Since inception the arbs have paid <b>19–30% implied APR</b> at 5×; the last week paid <b>10–13%</b>. Each arb's worst funding drawdown would cost <b>$1k–$16k</b> at current size. XMR is in its worst drawdown now and hasn't made it back yet. Data to 24 Nov 2026.</p>
+    </div>
+    <div class="figs" id="figs"></div>
+  </div>
+
+  <div class="chart">
+    <h2>Implied APR at 5×, by window</h2>
+    <div class="legend"><span><i class="m d7 k" style="position:static;transform:none"></i>7d</span><span><i class="m d30 k" style="position:static;transform:none"></i>30d</span><span><i class="m d90 k" style="position:static;transform:none"></i>90d</span><span><i class="m inc k" style="position:static;transform:none;height:14px"></i>Since inception</span></div>
+    <div id="strips"></div>
+  </div>
+</div></div>
+
+<div class="band" style="padding-top:0"><div class="wrap tables">
+  <section>
+    <h2>Return: funding spread and implied APR</h2>
+    <p class="cap">Spread = Hyperliquid funding − Binance funding, annualized, on notional per leg. Implied APR = spread × 2.5 (5× on each leg).</p>
+    <div class="scroll"><table class="stack" id="t1"></table></div>
+  </section>
+  <section>
+    <h2>Downside: worst funding drawdown</h2>
+    <p class="cap">Largest peak-to-trough drop in cumulative funding. P&amp;L assumes we held today's notional through that period. Funding only, no M2M.</p>
+    <div class="scroll"><table class="stack" id="t2"></table></div>
+  </section>
+  <section>
+    <h2>Exposure: current size and open interest</h2>
+    <p class="cap">Portfolio AuM <span id="aum"></span>. Margin = both legs at 5×. Headroom = distance to 5% of the smaller venue's OI (the limit agreed for oil, shown for all four).</p>
+    <div class="scroll"><table class="stack" id="t3"></table></div>
+  </section>
+</div></div>
+
+<div class="band" style="padding-top:0"><div class="wrap method">
+  <section>
+    <h2>Methodology</h2>
+    <ol>
+      <li><b>Data.</b> Settlement-level funding for each perp: Binance every 8h (XMR, ZEC) or 4h (BZ, CL), Hyperliquid every 1h. The files give annualized rates, so each settlement is converted to what was actually paid (rate × hours ÷ 8,760) and summed by day.</li>
+      <li><b>Trade.</b> Long Binance, short Hyperliquid on all four. Hyperliquid has paid more than Binance on average in every arb, and in every month since May. Daily spread = Hyperliquid funding − Binance funding, as % of notional per leg.</li>
+      <li><b>Windows.</b> 7d, 30d and 90d are the average daily spread over the last 7, 30 and 90 days to 24 Nov, × 365. Inception starts on the first full day both venues have data. For oil, April is excluded, so oil starts 1 May.</li>
+      <li><b>Implied APR.</b> Spread × 2.5. At 5×, $1 of notional per leg needs $0.20 of margin on each venue, so $0.40 in total.</li>
+      <li><b>Worst drawdown.</b> Largest peak-to-trough drop in cumulative spread. The period runs from the day after the peak to the trough. Recovery counts the days from the trough until cumulative funding is back at the peak.</li>
+      <li><b>Exposure.</b> Notional, OI and AuM come from the positions sheet. Drawdown P&amp;L = drawdown % × current notional per leg.</li>
+    </ol>
+  </section>
+  <section>
+    <h2>Checks and caveats</h2>
+    <ul>
+      <li>No missing days, and every day has the expected number of settlements on both venues. The 7d, 30d and 90d spreads match the moving averages in the source files, e.g. Brent 90d: −38.4% − (−44.7%) = 6.3%.</li>
+      <li><b>XMR legs don't match:</b> $1.14M on Binance vs $1.59M on Hyperliquid. The table uses the hedged $1.14M. At $1.59M the worst-drawdown P&amp;L would be about −$6.1k.</li>
+      <li><b>WTI labels in the positions sheet look swapped.</b> CL is Binance's ticker but is listed under Hyperliquid. The table takes the CL row as Binance and the WTI row as Hyperliquid. Notional is the same on both legs, so only the OI split depends on this.</li>
+      <li>About 45% of Binance oil settlements are exactly 0%, mostly on weekends. They are real settlements and are included.</li>
+      <li>HYPE isn't included because there was no data for it in this batch.</li>
+    </ul>
+  </section>
+</div></div>
+
+<script>
+{
+const AUM=43381448.56;
+const R=[{"arb": "Brent", "data_from": "2026-05-01", "first_overlap": "2026-04-01", "spread_7d": 0.050073452380952385, "spread_30d": 0.08865212222222221, "spread_90d": 0.0633482712962963, "spread_inception": 0.11004909915865382, "apr_7d": 0.12518363095238097, "apr_30d": 0.22163030555555552, "apr_90d": 0.15837067824074075, "apr_inception": 0.27512274789663455, "dd_pct": -0.0013530513698630092, "dd_from": "2026-06-07", "dd_to": "2026-06-14", "dd_days": 8, "dd_avg_spread": -0.06173296874999999, "dd_avg_apr": -0.154332421875, "dd_recovered": "2026-06-16", "dd_days_to_recover": 2, "notional_bin": 6135901.3, "notional_hl": 6135901.3, "notional_hedged": 6135901.3, "pct_aum": 0.14144067346007497, "margin_5x": 2454360.52, "margin_pct_aum": 0.05657626938402999, "oi_bin": 143936453.15, "oi_pct_bin": 0.04262923787350529, "oi_hl": 140580562.9, "oi_pct_hl": 0.04364686819731037, "dd_pnl_current": -8302.189659309219, "dd_pct_margin": -0.003382628424657523}, {"arb": "WTI", "data_from": "2026-05-01", "first_overlap": "2026-04-01", "spread_7d": 0.045107440476190475, "spread_30d": 0.0792901375, "spread_90d": 0.06849064259259259, "spread_inception": 0.08304197876602565, "apr_7d": 0.11276860119047619, "apr_30d": 0.19822534375, "apr_90d": 0.17122660648148147, "apr_inception": 0.20760494691506412, "dd_pct": -0.003752517123287672, "dd_from": "2026-06-09", "dd_to": "2026-06-14", "dd_days": 6, "dd_avg_spread": -0.22827812500000003, "dd_avg_apr": -0.5706953125, "dd_recovered": "2026-07-17", "dd_days_to_recover": 33, "notional_bin": 4193846.09, "notional_hl": 4193846.09, "notional_hedged": 4193846.09, "pct_aum": 0.09667372181451193, "margin_5x": 1677538.436, "margin_pct_aum": 0.03866948872580478, "oi_bin": 148758395.01, "oi_pct_bin": 0.028192332202280596, "oi_hl": 136832117.59, "oi_pct_hl": 0.03064957382715018, "dd_pnl_current": -15737.47926515805, "dd_pct_margin": -0.00938129280821918}, {"arb": "XMR", "data_from": "2026-01-16", "first_overlap": "2026-01-15", "spread_7d": 0.048639464285714286, "spread_30d": 0.2898725277777777, "spread_90d": 0.13918121064814815, "spread_inception": 0.12096661807774228, "apr_7d": 0.12159866071428571, "apr_30d": 0.7246813194444444, "apr_90d": 0.34795302662037036, "apr_inception": 0.3024165451943557, "dd_pct": -0.0038227168949771517, "dd_from": "2026-11-14", "dd_to": "2026-11-18", "dd_days": 5, "dd_avg_spread": -0.27905833333333335, "dd_avg_apr": -0.6976458333333334, "dd_recovered": null, "dd_days_to_recover": null, "notional_bin": 1140000.0, "notional_hl": 1588723.34, "notional_hedged": 1140000.0, "pct_aum": 0.026278513923371855, "margin_5x": 456000.0, "margin_pct_aum": 0.010511405569348741, "oi_bin": 41462291.93, "oi_pct_bin": 0.027494862124955378, "oi_hl": 68536992.19, "oi_pct_hl": 0.023180523236206525, "dd_pnl_current": -4357.897260273953, "dd_pct_margin": -0.00955679223744288}, {"arb": "ZEC", "data_from": "2026-01-01", "first_overlap": "2026-01-01", "spread_7d": 0.039208392857142865, "spread_30d": 0.04134580833333334, "spread_90d": 0.060003034722222216, "spread_inception": 0.07780912270071139, "apr_7d": 0.09802098214285716, "apr_30d": 0.10336452083333335, "apr_90d": 0.15000758680555554, "apr_inception": 0.19452280675177847, "dd_pct": -0.0011013264840182653, "dd_from": "2026-01-09", "dd_to": "2026-01-15", "dd_days": 7, "dd_avg_spread": -0.057426309523809525, "dd_avg_apr": -0.14356577380952382, "dd_recovered": "2026-01-23", "dd_days_to_recover": 8, "notional_bin": 1235090.77, "notional_hl": 1235090.77, "notional_hedged": 1235090.77, "pct_aum": 0.02847048245269567, "margin_5x": 494036.308, "margin_pct_aum": 0.011388192981078269, "oi_bin": 336890770.55, "oi_pct_bin": 0.003666146056728178, "oi_hl": 205809215.28, "oi_pct_hl": 0.00600114415829087, "dd_pnl_current": -1360.238175167512, "dd_pct_margin": -0.002753316210045663}];
+const pct=(v,d=1)=>(v*100).toFixed(d).replace('-','−')+'%';
+const usd=v=>{const a=Math.abs(v),s=v<0?'−':'';return a>=1e6?s+'$'+(a/1e6).toFixed(2)+'M':s+'$'+(a/1e3).toFixed(1)+'k'};
+const dt=s=>{if(!s)return'—';const d=new Date(s+'T00:00:00Z');return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'UTC'})};
+const dty=s=>{const d=new Date(s+'T00:00:00Z');return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})};
+const c=v=>v<0?' class="neg"':'';
+document.getElementById('aum').textContent=usd(AUM);
+
+const inc=R.map(r=>r.apr_inception),w7=R.map(r=>r.apr_7d);
+const totN=R.reduce((a,r)=>a+r.notional_hedged,0),totM=R.reduce((a,r)=>a+r.margin_5x,0);
+document.getElementById('figs').innerHTML=[
+ [pct(Math.min(...w7),0)+'–'+pct(Math.max(...w7),0),'7d implied APR'],
+ [pct(Math.min(...inc),0)+'–'+pct(Math.max(...inc),0),'Implied APR since inception'],
+ [usd(totN),'Notional per leg, all four ('+pct(totN/AUM)+' of AuM)'],
+ [usd(totM),'Margin at 5× ('+pct(totM/AUM)+' of AuM)']
+].map(([a,b])=>`<div><div class="big">${a}</div><small>${b}</small></div>`).join('');
+
+const max=0.8,x=v=>(Math.max(0,Math.min(v,max))/max*100).toFixed(2)+'%';
+document.getElementById('strips').innerHTML=R.map(r=>`<div class="strip"><b>${r.arb}</b><div class="track">
+ <i class="m inc" style="left:${x(r.apr_inception)}" title="Inception ${pct(r.apr_inception)}"></i>
+ <i class="m d90" style="left:${x(r.apr_90d)}" title="90d ${pct(r.apr_90d)}"></i>
+ <i class="m d30" style="left:${x(r.apr_30d)}" title="30d ${pct(r.apr_30d)}"></i>
+ <i class="m d7" style="left:${x(r.apr_7d)}" title="7d ${pct(r.apr_7d)}"></i></div></div>`).join('')+
+ `<div class="axis"><span></span><div class="track">${[0,.2,.4,.6,.8].map(t=>`<span style="left:${x(t)}">${pct(t,0)}</span>`).join('')}</div></div>`;
+
+const H=(rows)=>`<thead>${rows}</thead>`;
+document.getElementById('t1').innerHTML=H(`<tr><th rowspan="2">Arb</th><th class="g" colspan="2">Weekly (7d)</th><th class="g" colspan="2">Monthly (30d)</th><th class="g" colspan="2">Quarterly (90d)</th><th class="g" colspan="2">Since inception</th><th rowspan="2">Data since</th></tr>
+<tr><th>Spread</th><th>APR</th><th>Spread</th><th>APR</th><th>Spread</th><th>APR</th><th>Spread</th><th>APR</th></tr>`)+
+'<tbody>'+R.map(r=>`<tr><td>${r.arb}</td>
+<td data-l="7d spread">${pct(r.spread_7d)}</td><td data-l="7d APR">${pct(r.apr_7d)}</td>
+<td data-l="30d spread">${pct(r.spread_30d)}</td><td data-l="30d APR">${pct(r.apr_30d)}</td>
+<td data-l="90d spread">${pct(r.spread_90d)}</td><td data-l="90d APR">${pct(r.apr_90d)}</td>
+<td data-l="Inception spread">${pct(r.spread_inception)}</td><td data-l="Inception APR">${pct(r.apr_inception)}</td>
+<td data-l="Data since">${dty(r.data_from)}</td></tr>`).join('')+'</tbody>';
+
+document.getElementById('t2').innerHTML=H(`<tr><th>Arb</th><th>Drawdown<br><span class="sub">% notional</span></th><th>Period</th><th>Days</th><th>Avg spread<br><span class="sub">in period</span></th><th>Avg APR<br><span class="sub">in period</span></th><th>Recovered</th><th>Days to recover</th><th>P&amp;L at<br>current size</th><th>% of<br>margin</th></tr>`)+
+'<tbody>'+R.map(r=>`<tr><td>${r.arb}</td>
+<td data-l="Drawdown"${c(r.dd_pct)}>${pct(r.dd_pct,2)}</td>
+<td data-l="Period">${dt(r.dd_from)} – ${dt(r.dd_to)}</td><td data-l="Days">${r.dd_days}</td>
+<td data-l="Avg spread"${c(r.dd_avg_spread)}>${pct(r.dd_avg_spread)}</td><td data-l="Avg APR"${c(r.dd_avg_apr)}>${pct(r.dd_avg_apr)}</td>
+<td data-l="Recovered">${r.dd_recovered?dt(r.dd_recovered):'Not yet'}</td>
+<td data-l="Days to recover">${r.dd_days_to_recover==null?'Open':r.dd_days_to_recover}</td>
+<td data-l="P&amp;L at current size"${c(r.dd_pnl_current)}>${usd(r.dd_pnl_current)}</td>
+<td data-l="% of margin"${c(r.dd_pct_margin)}>${pct(r.dd_pct_margin,2)}</td></tr>`).join('')+'</tbody>';
+
+document.getElementById('t3').innerHTML=H(`<tr><th>Arb</th><th>Notional<br><span class="sub">per leg</span></th><th>% of AuM</th><th>Margin at 5×</th><th>Margin<br><span class="sub">% of AuM</span></th><th>Binance OI</th><th>Our % of<br>Binance OI</th><th>Hyperliquid OI</th><th>Our % of<br>HL OI</th><th>Headroom to<br>5% of OI</th></tr>`)+
+'<tbody>'+R.map(r=>{const room=0.05*Math.min(r.oi_bin,r.oi_hl)-Math.max(r.notional_bin,r.notional_hl);
+return `<tr><td>${r.arb}</td>
+<td data-l="Notional per leg">${usd(r.notional_hedged)}${r.notional_hl!==r.notional_bin?' <span class="sub">(HL '+usd(r.notional_hl)+')</span>':''}</td>
+<td data-l="% of AuM">${pct(r.pct_aum)}</td><td data-l="Margin at 5×">${usd(r.margin_5x)}</td><td data-l="Margin % of AuM">${pct(r.margin_pct_aum)}</td>
+<td data-l="Binance OI">${usd(r.oi_bin)}</td><td data-l="Our % of Binance OI">${pct(r.oi_pct_bin,2)}</td>
+<td data-l="Hyperliquid OI">${usd(r.oi_hl)}</td><td data-l="Our % of HL OI">${pct(r.oi_pct_hl,2)}</td>
+<td data-l="Headroom to 5% of OI">+${usd(room)}</td></tr>`}).join('')+'</tbody>';
+}
+</script>
