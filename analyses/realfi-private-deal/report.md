@@ -74,18 +74,20 @@
 #### **3. What's the Opportunity**
 
 **The deal.**
-1. We send $5M USDC to RealFi Reserve and receive 5M USDrf, which we hold for 2 months.
-2. The USDC buys ~$3M OUSG and ~$2M jAAA, held in a dedicated Safe.
-3. At maturity they redeem the assets and pay us back $5M at par.
+- We **mint $5M of USDrf**.
+- Our USDrf is backed by the USDC we deposit, held in a **dedicated 3-of-5 Safe**: 2 keys Re7, 2 keys RealFi, 1 key HT Digital.
+- **Proposed allocation:** ~60% OUSG and ~40% jAAA.
+- We receive the **organic yield** from those assets (~4.5%), and RealFi pays the **difference up to 12%** (~7.5%). The team has offered to pre-fund this delta into a separate wallet and pay us from it.
+- On top of that, we receive **8% in RFG tokens**.
+- **At maturity (2 months)**, the assets are redeemed and our USDrf is redeemed at par for USDC.
 
-| | Rate | $ (2 months) | Paid by |
-| --- | --- | --- | --- |
-| Backing yield | ~4.5% | ~$37.6k | RealFi Reserve |
-| Top-up (delta) | ~7.5% | ~$62.7k | RealFi Foundation (pre-funded into a separate wallet) |
-| **Total cash** | **12%** | **~$100k** | |
-| RFG tokens | 8% | ~$66.8k | Valued at $0 |
+| | APR | $5M over 2 months |
+| --- | --- | --- |
+| Cash yield (USDC) | 12% | ~$100k |
+| RFG tokens | 8% | ~$66.8k |
+| **Total** | **20%** | **~$167k** |
 
-**Why it's good**
+**Why it's a great risk-adjusted opportunity**
 - **Our assets are segregated from the main lending book.** If the lending book goes to zero, we don't care. We are only exposed to our own collateral, OUSG and jAAA, and this is set out in the agreement.
 - The collateral sits in a 3-of-5 Safe where no party can move funds on its own. **The trust assumption is HT Digital**, the independent signer, doing what the legal agreement says. HT Digital is a reputable firm that Re7 already works with.
 - **OUSG** is short-dated T-Bills from Ondo. **jAAA** we know well, and here we hold it spot with no leverage, so there is no liquidation risk.
