@@ -98,32 +98,33 @@
 #### **4. How can we lose money?**
 
 **Q1. What if the protocol is hacked, or someone mints unbacked USDrf?**
-Nothing happens to us. Our backing is off-chain in our own Safe, which the USDrf contracts can't touch. Minting also requires KYB and whitelisting.
+It doesn't affect us. Our collateral sits in our own dedicated Safe, separate from the protocol. As the team explained on the call, even if the protocol were hacked, the rest of its backing is held off-chain: direct lending, plus T-Bills and CLOs with custodians.
 
-**Q2. What if someone tries to steal all the reserves?**
-They can't reach ours. The main reserve is held off-chain with custodians, and our Safe needs 3 of 5 signatures.
+**Q2. What if someone steals the reserves?**
+- **OUSG and jAAA** can only be held by KYC'd addresses. Ondo's KYC registry gates OUSG, and jAAA is a restricted token with a whitelist. The issuers can freeze them: Ondo by removing an address from its registry (it also has an admin burn role), Anemoy/Centrifuge by freezing the address. A thief couldn't use or redeem them.
+- **Direct lending** is off-chain loans, so there is nothing to steal on-chain.
+- **USDrf:** minting is permissioned (KYB'd and whitelisted institutions only, 1:1 against USDC) and auto-suspends if backing falls below 100%. Admin is a 3-of-5 multisig with an emergency pause. *To confirm with the team: whether they can burn or freeze any holder's USDrf balance.*
 
 **Q3. What if the lending book goes to zero?**
-We don't care. Our collateral is segregated, and we're only exposed to OUSG and jAAA. *Legal must confirm that the side letter really ring-fences the Safe. Today the term sheet says the Safe assets are owned by the fund and that we rank "pari passu with other unstaked USDrf".*
+It doesn't affect us. Our collateral is segregated from the lending book, and we are only exposed to OUSG and jAAA. The team explicitly agreed this on the call, and the legal draft is meant to reflect it. We need to be careful with the wording, because the term sheet currently says the Safe assets are owned by the fund and that we rank "pari passu with other unstaked USDrf". **Chris and Kirill should review it.**
 
 **Q4. What if HT Digital doesn't do what was agreed, and won't release interest or our principal?**
-We have a legal contract under which HT must cooperate. With HT's key we have 3 of 5 keys and can exit without RealFi. HT is the trust assumption.
+This is the main risk and the weakest point of the deal. HT Digital is our trust assumption. With their key we hold 3 of 5 and can exit without RealFi. If they act against us, I don't have a clear mitigation beyond the legal agreement. That said, I don't see why they would: they are a reputable firm, Re7 already works with them, and they would be breaching a signed agreement.
 
-**Q5. What if keys are stolen?**
-An attacker would need 3 keys across two organizations. Stealing RealFi's 2 keys isn't enough: they would also need HT's key or both of ours.
+**Q5. What if the Safe keys are stolen?**
+An attacker would need 3 of the 5 keys across two organizations. Stealing RealFi's 2 keys isn't enough: they would also need HT Digital's key or both of ours.
 
 **Q6. What if OUSG or jAAA lose value?**
-- **OUSG:** T-Bills. KYC is required to mint it and Ondo can freeze it, so it's very hard to hack and it won't go to zero.
-- **jAAA:** AAA CLOs. Spot exposure on $2M, against the ~$100k we earn in 2 months:
+This is a real risk, and it's the exposure we keep. Holding T-Bills and AAA CLOs for 2 months at 12% more than compensates for it.
 
-| Scenario | Drawdown | jAAA loss | Net P&L |
+The table below assumes the worst historical drawdowns hit jAAA ($2M) and we exit at the bottom at maturity. In practice it's a mark-to-market loss that recovers if we hold.
+
+| Scenario | Drawdown | jAAA loss | Net P&L incl. 12% |
 | --- | --- | --- | --- |
 | Fund max DD (Mar-26) | 0.22% | −$4.4k | +$95.9k |
 | JAAA ETF max DD | 2.6% | −$52k | +$48.3k |
 | COVID | 8.33% | −$166.6k | −$66.3k (−1.3%) |
 | Extreme | 10% | −$200k | −$99.7k (−2.0%) |
-
-This assumes RealFi also fails to pay par, which is their obligation first.
 
 **Q7. What if the Foundation disappears or goes bankrupt?**
 We still have our collateral: it is segregated and it's ours. The Foundation only owes us the top-up, and that is pre-funded into a separate wallet.
@@ -143,14 +144,10 @@ RealFi executes the redemption at maturity, so we depend on them doing it. If th
 
 #### **Annex: How much could the token be worth?**
 
-- We receive **$66.8k in RFG**, priced at the higher of the 7-day VWAP after TGE and a floor price that hasn't been set yet. The tokens are unlocked and delivered 7 days after TGE. TGE is expected in Q1 2027.
-- Because the amount is fixed in USD, a high FDV doesn't give us more: we just receive fewer tokens. The value depends on TGE happening and on where the price is when we sell.
+The tokens are a **fixed USD amount: 8% APR on $5M for 2 months ≈ $66.8k**. That amount is converted into RFG at the 7-day VWAP after TGE (or a floor price, if higher). There is no vesting: the tokens are delivered 7 days after TGE. TGE is expected in Q1 2027.
 
-| Case | Value | Extra annualized yield |
-| --- | --- | --- |
-| No TGE | $0 | 0% |
-| Sold at VWAP | $66.8k | +8% |
-| Sold 30% below VWAP | $46.8k | +5.6% |
-| Sold 50% below VWAP | $33.4k | +4% |
+So the tokens are worth either:
+- **~$66.8k**, if TGE happens and we sell around the VWAP; less if the price drops after delivery (e.g. ~$33k at −50%), or
+- **$0**, if TGE doesn't happen.
 
-We don't count on it.
+A higher FDV doesn't increase the value: we just receive fewer tokens. We don't count on them.
