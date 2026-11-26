@@ -74,9 +74,9 @@
 #### **3. What's the Opportunity**
 
 **The deal.**
-- We **mint $5M of USDrf**.
-- Our USDrf is backed by the USDC we deposit, held in a **dedicated 3-of-5 Safe**: 2 keys Re7, 2 keys RealFi, 1 key HT Digital.
-- **Proposed allocation:** ~60% OUSG and ~40% jAAA.
+- We **mint 5M USDrf** with $5M USDC.
+- RealFi invests that USDC 1:1 into **~60% OUSG and ~40% jAAA** (proposed allocation). These assets are held in a **dedicated 3-of-5 Safe**: 2 keys Re7, 2 keys RealFi, 1 key HT Digital.
+- **Our USDrf is backed by those OUSG and jAAA**, not by RealFi's lending book.
 - We receive the **organic yield** from those assets (~4.5%), and RealFi pays the **difference up to 12%** (~7.5%). The team has offered to pre-fund this delta into a separate wallet and pay us from it.
 - On top of that, we receive **8% in RFG tokens**.
 - **At maturity (2 months)**, the assets are redeemed and our USDrf is redeemed at par for USDC.
