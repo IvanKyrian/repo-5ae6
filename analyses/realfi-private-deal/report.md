@@ -111,6 +111,13 @@ It doesn't affect us. Our collateral is segregated from the lending book, and we
 **Q4. What if HT Digital doesn't do what was agreed, and won't release interest or our principal?**
 This is the main risk and the weakest point of the deal. HT Digital is our trust assumption. With their key we hold 3 of 5 and can exit without RealFi. If they act against us, I don't have a clear mitigation beyond the legal agreement. That said, I don't see why they would: they are a reputable firm, Re7 already works with them, and they would be breaching a signed agreement.
 
+Context from Jordan:
+- HT Digital is the digital-asset arm of **Harris & Trotter**, which is **Re7's own accountant**; our registered office is also with them.
+- They act as independent professionals in the digital-asset space, not as a RealFi counterparty, so they should be neutral between the two sides and follow the legal agreement.
+- The key point is the detail of when 3 keys can sign, and for whom. The backstop is a clear legal agreement that HT Digital has reviewed and commits to comply with.
+
+They are also RealFi's proof-of-reserves attestor.
+
 **Q5. What if the Safe keys are stolen?**
 An attacker would need 3 of the 5 keys across two organizations. Stealing RealFi's 2 keys isn't enough: they would also need HT Digital's key or both of ours.
 
