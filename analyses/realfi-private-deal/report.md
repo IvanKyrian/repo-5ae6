@@ -111,12 +111,7 @@ It doesn't affect us. Our collateral is segregated from the lending book, and we
 **Q4. What if HT Digital doesn't do what was agreed, and won't release interest or our principal?**
 This is the main risk and the weakest point of the deal. HT Digital is our trust assumption. With their key we hold 3 of 5 and can exit without RealFi. If they act against us, I don't have a clear mitigation beyond the legal agreement. That said, I don't see why they would: they are a reputable firm, Re7 already works with them, and they would be breaching a signed agreement.
 
-Context from Jordan:
-- HT Digital is the digital-asset arm of **Harris & Trotter**, which is **Re7's own accountant**; our registered office is also with them.
-- They act as independent professionals in the digital-asset space, not as a RealFi counterparty, so they should be neutral between the two sides and follow the legal agreement.
-- The key point is the detail of when 3 keys can sign, and for whom. The backstop is a clear legal agreement that HT Digital has reviewed and commits to comply with.
-
-They are also RealFi's proof-of-reserves attestor.
+Per Jordan, HT Digital is the digital-asset arm of **Harris & Trotter, Re7's own accountant**. They act as a neutral, independent party, so the backstop is a clear legal agreement that they review and commit to.
 
 **Q5. What if the Safe keys are stolen?**
 An attacker would need 3 of the 5 keys across two organizations. Stealing RealFi's 2 keys isn't enough: they would also need HT Digital's key or both of ours.
@@ -124,14 +119,14 @@ An attacker would need 3 of the 5 keys across two organizations. Stealing RealFi
 **Q6. What if OUSG or jAAA lose value?**
 This is a real risk, and it's the exposure we keep. Holding T-Bills and AAA CLOs for 2 months at 12% more than compensates for it.
 
-The table below assumes the worst historical drawdowns hit jAAA ($2M) and we exit at the bottom at maturity. In practice it's a mark-to-market loss that recovers if we hold.
+The table below shows, per **$1M allocated** ($400k in jAAA), what happens if the worst historical drawdowns hit jAAA and we exit at the bottom at maturity. In practice it's a mark-to-market loss that recovers if we hold.
 
-| Scenario | Drawdown | jAAA loss | Net P&L incl. 12% |
+| Scenario | Drawdown | jAAA loss | Net P&L incl. 12% (2 months) |
 | --- | --- | --- | --- |
-| Fund max DD (Mar-26) | 0.22% | −$4.4k | +$95.9k |
-| JAAA ETF max DD | 2.6% | −$52k | +$48.3k |
-| COVID | 8.33% | −$166.6k | −$66.3k (−1.3%) |
-| Extreme | 10% | −$200k | −$99.7k (−2.0%) |
+| Fund max DD (Mar-26) | 0.22% | −$0.9k | +$19.2k (+1.9%) |
+| JAAA ETF max DD | 2.6% | −$10.4k | +$9.7k (+1.0%) |
+| COVID | 8.33% | −$33.3k | −$13.3k (−1.3%) |
+| Extreme | 10% | −$40.0k | −$19.9k (−2.0%) |
 
 **Q7. What if the Foundation disappears or goes bankrupt?**
 We still have our collateral: it is segregated and it's ours. The Foundation only owes us the top-up, and that is pre-funded into a separate wallet.
